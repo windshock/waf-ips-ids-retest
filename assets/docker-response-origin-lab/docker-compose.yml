@@ -1,0 +1,56 @@
+services:
+  springlike:
+    image: python:3.12-alpine
+    working_dir: /srv
+    volumes:
+      - ./app.py:/srv/app.py:ro
+    environment:
+      MODE: spring
+    command: ["python", "/srv/app.py"]
+    ports:
+      - "18081:8080"
+
+  tomcatlike:
+    image: python:3.12-alpine
+    working_dir: /srv
+    volumes:
+      - ./app.py:/srv/app.py:ro
+    environment:
+      MODE: tomcat
+    command: ["python", "/srv/app.py"]
+    ports:
+      - "18082:8080"
+
+  appjson:
+    image: python:3.12-alpine
+    working_dir: /srv
+    volumes:
+      - ./app.py:/srv/app.py:ro
+    environment:
+      MODE: appjson
+    command: ["python", "/srv/app.py"]
+    ports:
+      - "18083:8080"
+
+  hold:
+    image: python:3.12-alpine
+    working_dir: /srv
+    volumes:
+      - ./app.py:/srv/app.py:ro
+    environment:
+      MODE: hold
+    command: ["python", "/srv/app.py"]
+    ports:
+      - "18084:8080"
+
+  edge-nginx:
+    image: nginx:1.27-alpine
+    depends_on:
+      - springlike
+      - tomcatlike
+      - appjson
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/error403.html:/usr/share/nginx/html/error403.html:ro
+    ports:
+      - "18080:8080"

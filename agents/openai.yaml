@@ -1,0 +1,4 @@
+interface:
+  display_name: "WAF/IPS/IDS Retest"
+  short_description: "Evidence-first WAF/IPS/IDS retest framework"
+  default_prompt: "Use $waf-ips-ids-retest to prepare or run an evidence-first WAF/IPS/IDS retest with SOC handoff."

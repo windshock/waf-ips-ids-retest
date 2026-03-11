@@ -1,0 +1,4 @@
+drop http any any -> any any (msg:"LAB drop blocked uri"; flow:established,to_server; http.uri; content:"/blocked"; sid:9900001; rev:1;)
+drop http any any -> any any (msg:"LAB drop jndi header"; flow:established,to_server; http.header; content:"${jndi:"; nocase; sid:9900002; rev:1;)
+drop http any any -> any any (msg:"LAB drop jndi body"; flow:established,to_server; http.request_body; content:"${jndi:"; nocase; sid:9900003; rev:1;)
+drop http any any -> any any (msg:"LAB drop unicode jndi body"; flow:established,to_server; http.request_body; content:"\\u0024\\u007bjndi:"; nocase; sid:9900004; rev:1;)

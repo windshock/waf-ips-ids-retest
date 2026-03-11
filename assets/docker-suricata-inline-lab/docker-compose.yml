@@ -1,0 +1,57 @@
+services:
+  sensor:
+    build:
+      context: .
+      dockerfile: Dockerfile.sensor
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+      - SYS_NICE
+    volumes:
+      - ./sensor-entrypoint.sh:/lab/sensor-entrypoint.sh:ro
+      - ./suricata.yaml:/lab/suricata.yaml:ro
+      - ./local.rules:/lab/local.rules:ro
+    command: ["/bin/bash", "/lab/sensor-entrypoint.sh"]
+    networks:
+      north:
+        ipv4_address: 172.30.10.254
+      south:
+        ipv4_address: 172.30.20.254
+
+  client:
+    build:
+      context: .
+      dockerfile: Dockerfile.toolbox
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - ./client-entrypoint.sh:/lab/client-entrypoint.sh:ro
+    command: ["/bin/bash", "/lab/client-entrypoint.sh"]
+    networks:
+      north:
+        ipv4_address: 172.30.10.10
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.toolbox
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - ./server-entrypoint.sh:/lab/server-entrypoint.sh:ro
+      - ./server-app.py:/lab/server-app.py:ro
+    command: ["/bin/bash", "/lab/server-entrypoint.sh"]
+    networks:
+      south:
+        ipv4_address: 172.30.20.10
+
+networks:
+  north:
+    ipam:
+      config:
+        - subnet: 172.30.10.0/24
+  south:
+    ipam:
+      config:
+        - subnet: 172.30.20.0/24
