@@ -1,6 +1,6 @@
 ---
 name: waf-ips-ids-retest
-description: Evidence-first retest framework for WAF, IPS, and IDS validation with SOC handoff. Use when preparing or running follow-up security tests against web or API targets, especially when you need to classify HTTPS visibility, callback reliability, blocked tests, evidence completeness, and produce normalized run manifests, merged CSV logs, and SOC handoff documents.
+description: Use when rerunning WAF, IPS, or IDS bypass tests and you need readiness checks, conservative result interpretation, and SOC-ready evidence.
 ---
 
 # WAF IPS IDS Retest
@@ -8,6 +8,10 @@ description: Evidence-first retest framework for WAF, IPS, and IDS validation wi
 ## Overview
 
 Use this skill to turn ad hoc retests into a controlled verification cycle. Treat it as a retest framework, not a generic scanner: confirm environment readiness first, record evidence in a fixed model, then normalize outputs for SOC or blue-team correlation.
+
+If this is your first run with the skill, start with `references/quick_start.md`. It points to the example inputs and outputs under `assets/examples/`.
+
+`agents/openai.yaml` is UI metadata for skill pickers. You do not need it during normal execution unless you are maintaining the skill package itself.
 
 ## Workflow
 
@@ -21,8 +25,10 @@ Before interpreting any result, determine whether the target is in one of these 
 
 Read:
 
+- `references/quick_start.md` if you need a minimal runnable example
 - `references/environment_modes.md`
 - `references/target_profile_schema.md`
+- `references/dependencies.md` if you need tool prerequisites or failure hints
 
 Run:
 
@@ -55,6 +61,8 @@ Run the retest in this order:
 6. SOC handoff
 
 Keep `baseline -> comparison variant -> target variant` ordering for core TCs. For TC-specific expectations and prerequisites, load `references/tc_matrix.md`.
+
+If you need to know which TCs are fully automated, partially automated, or intentionally manual, read `references/execution_coverage.md` before deciding whether a missing runner is a bug or an explicit limitation.
 
 When TC-08 needs stronger evidence than a generic split replay, run `scripts/run_tc08_contract_probe.py` to compare `baseline -> plain -> unicode` against the same endpoint and accepted app headers while saving pcaps and segmented raw requests.
 
@@ -106,13 +114,18 @@ Read `references/evidence_model.md` and `references/soc_handoff.md` before drawi
 ### scripts/
 
 - `common.py`: shared helpers for profile loading, mode inference, and template handling
+- `manual_stub_common.py`: shared helpers for explicit manual-only or blocked TC stubs
 - `prereq_validator.py`: validate environment class, prerequisites, and TC readiness
 - `generate_run_manifest.py`: generate a normalized run manifest from run inputs
 - `merge_normalize_csv.py`: merge and normalize heterogeneous execution CSVs
 - `render_soc_handoff.py`: render SOC handoff Markdown from the manifest and merged evidence
 - `classify_response_origin.py`: classify saved error responses as likely edge, inline control, upstream app, or unknown using conservative heuristics
 - `http_probe_common.py`: shared helpers for curl-based probes, raw HTTP requests, and artifact saving
+- `run_tc09_manual_stub.py`: emit a manual-only TC-09 skeleton when raw relay work remains target-specific
+- `run_tc10_manual_stub.py`: emit a manual-only TC-10 skeleton when a real encryptor and accepted contract are required
 - `run_tc08_contract_probe.py`: execute contract-aware TC-08 control and split probes with baseline curl, Scapy raw segments, and pcap capture
+- `run_tc12_oversize_probe.py`: compare baseline and progressively larger request bodies against the same endpoint
+- `run_tc15_lax_json_probe.py`: compare valid JSON against lax and partial-parse variants
 - `run_tc17_canonical_probe.py`: send duplicate header and canonicalization-conflict probes with raw HTTP artifacts
 - `run_tc18_compressed_probe.py`: compare plain, gzip, deflate, and optional br request bodies
 - `run_tc19_authority_probe.py`: compare aligned HTTP/2 requests against Host and Forwarded mismatch variants
@@ -125,6 +138,9 @@ Read `references/evidence_model.md` and `references/soc_handoff.md` before drawi
 
 ### references/
 
+- `quick_start.md`: first-run commands with sample input and output files
+- `dependencies.md`: required and optional tooling, plus expected failure behavior
+- `execution_coverage.md`: which TCs are automated, mixed, manual-only, or conditional
 - `environment_modes.md`: interpret SSL visibility and callback stability correctly
 - `retest_process.md`: phase order, entry criteria, exit criteria, and blocked handling
 - `tc_matrix.md`: TC-specific prerequisites, controls, and minimum evidence
@@ -137,6 +153,11 @@ Read `references/evidence_model.md` and `references/soc_handoff.md` before drawi
 
 ### assets/
 
+- `examples/profile.example.yaml`
+- `examples/run-config.example.yaml`
+- `examples/run_manifest.example.md`
+- `examples/combined.example.csv`
+- `examples/soc_handoff.example.md`
 - `templates/combined-header.csv`
 - `templates/run_manifest.md.tmpl`
 - `templates/coverage_matrix.md.tmpl`

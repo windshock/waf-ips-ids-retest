@@ -1,0 +1,4 @@
+timestamp,domain,tc,zone,payload_type,protocol,server_response_code,ids_result,callback_state,notes
+2026-03-12T09:01:00+09:00,api.example.com,TC-17,header,duplicate_host,HTTPS,400,,unstable,front parser rejected duplicate host
+2026-03-12T09:02:00+09:00,api.example.com,TC-18,body,gzip_jndi,HTTPS,403,,unstable,compressed path differed from plain body
+2026-03-12T09:03:00+09:00,api.example.com,TC-12,body,oversize_65536,HTTPS,403,,unstable,oversize request compared against same endpoint

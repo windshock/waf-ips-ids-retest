@@ -1,0 +1,28 @@
+{
+  "run_id": "example_20260312_090000",
+  "start_time": "2026-03-12 09:00:00+09:00",
+  "timezone": "Asia/Seoul",
+  "source_ip": "203.0.113.10",
+  "callback_domain": "example.oast.site",
+  "callback_state": "unstable",
+  "environment_mode": "C",
+  "ssl_visibility": "unavailable",
+  "ids_mode": "ids-only",
+  "tool_versions": "curl=8.8.0, python=3.12, scapy=2.5.0",
+  "ruleset_version": "secui-mfi-example",
+  "notes": "HTTPS visibility unavailable; Callback infrastructure unstable; Blocked TCs: TC-09, TC-10; Conditional TCs not run: TC-25, TC-26",
+  "blocked_tcs": [
+    "TC-09",
+    "TC-10"
+  ],
+  "not_run_tcs": [
+    "TC-25",
+    "TC-26"
+  ],
+  "target_name": "example-web-api",
+  "domains": [
+    "api.example.com",
+    "auth.example.com"
+  ],
+  "manifest_path": "/Users/1004276/.codex/skills/local/waf-ips-ids-retest/assets/examples/run_manifest.example.md"
+}

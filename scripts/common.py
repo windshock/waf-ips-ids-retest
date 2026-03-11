@@ -52,7 +52,7 @@ def load_structured(path_str: str | None) -> dict[str, Any]:
 
 def dump_json(path_str: str, payload: dict[str, Any]) -> None:
     path = Path(path_str)
-    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False, default=str) + "\n", encoding="utf-8")
 
 
 def get_field(*sources: dict[str, Any], names: list[str], default: Any = "") -> Any:

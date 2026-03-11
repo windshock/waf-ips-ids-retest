@@ -1,0 +1,49 @@
+name: example-web-api
+domains:
+  - api.example.com
+  - auth.example.com
+critical_endpoints:
+  plaintext_json:
+    - https://api.example.com/v1/search
+  auth_like:
+    - https://auth.example.com/login
+encrypted_endpoints:
+  required: true
+  notes: "Real app-side encryptor required for visibility testing"
+approval_levels:
+  high_risk:
+    - TC-07
+    - TC-08
+    - TC-09
+    - TC-16
+capabilities:
+  http3: unknown
+  websocket: absent
+  graphql: unknown
+  grpc: absent
+cacheable_paths:
+  - https://api.example.com/v1/public
+routing_headers:
+  - Host
+  - X-Forwarded-Host
+  - Forwarded
+tc_scope:
+  core:
+    - TC-01
+    - TC-03
+    - TC-08
+    - TC-10
+    - TC-11
+    - TC-12
+    - TC-15
+    - TC-17
+    - TC-18
+    - TC-19
+    - TC-20
+    - TC-21
+    - TC-22
+    - TC-23
+    - TC-24
+  conditional:
+    - TC-25
+    - TC-26

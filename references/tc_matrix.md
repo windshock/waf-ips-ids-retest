@@ -2,6 +2,8 @@
 
 This matrix defines what must be true before each TC is considered valid.
 
+For runner coverage and manual-only gaps, read `execution_coverage.md` with this table.
+
 | TC | Goal | Controls | Prerequisites | Minimum evidence |
 | :---- | :---- | :---- | :---- | :---- |
 | TC-01 | Unicode or normalization gap | baseline, full escape, partial escape | visible JSON endpoint | request, response, IDS result |

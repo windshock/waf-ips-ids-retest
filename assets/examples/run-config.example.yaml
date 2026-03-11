@@ -1,0 +1,27 @@
+run_id: example_20260312_090000
+start_time: 2026-03-12T09:00:00+09:00
+timezone: Asia/Seoul
+source_ip: 203.0.113.10
+callback_domain: example.oast.site
+callback_state: unstable
+marker_prefix: APP-SECURITY-AUDIT
+ssl_visibility: false
+ids_mode: ids-only
+ruleset_version: secui-mfi-example
+tool_versions:
+  curl: "8.8.0"
+  python: "3.12"
+  scapy: "2.5.0"
+use_sudo: true
+raw_packet_ready: true
+pcap_ready: true
+waffled_relay_ready: false
+encryptor_ready: false
+encryption_keys_ready: false
+encrypted_endpoint_contract_ready: false
+compression_tooling_ready: true
+decoded_body_compare_ready: true
+cache_probe_ready: true
+raw_chunked_ready: true
+http2_supported: true
+http2_tooling_ready: true
