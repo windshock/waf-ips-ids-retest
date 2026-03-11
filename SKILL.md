@@ -132,7 +132,7 @@ Read `references/evidence_model.md` and `references/soc_handoff.md` before drawi
 - `response_origin_triage.md`: how to distinguish edge-generated, inline-device, and upstream-app error responses
 - `suricata_inline_lab.md`: how to run a local Suricata inline block lab and interpret `drop` vs `403`
 - `target_profile_schema.md`: generic target profile schema with an example
-- `ocb-example-profile.md`: example profile showing how to map a real target into the generic schema
+- `app-example-profile.md`: example profile showing how to map a real target into the generic schema
 - `soc_handoff.md`: what to include when handing evidence to SOC or IDS operators
 
 ### assets/

@@ -22,7 +22,7 @@ def build_chunked_request(
     headers = [
         f"POST {path} HTTP/1.1",
         f"Host: {host}",
-        "User-Agent: OCB-TC24",
+        "User-Agent: RETEST-TC24",
         f"Content-Type: {content_type}",
         "Transfer-Encoding: chunked",
         "Connection: close",

@@ -1,20 +1,20 @@
-# OCB Example Profile
+# Mobile App Example Profile
 
 Use this as an example profile, not as a hardcoded default.
 
 ```yaml
 target:
-  name: "okcashbag"
+  name: "example-mobile-app"
   domains:
-    - "www.okcashbag.com"
-    - "member.okcashbag.com"
-    - "msg.okcashbag.com"
+    - "www.example-app.test"
+    - "member.example-app.test"
+    - "api.example-app.test"
   http_visible_domains:
-    - "msg.okcashbag.com"
+    - "api.example-app.test"
   https_visibility_mode: "unknown"
   critical_endpoints:
-    - "https://msg.okcashbag.com/sugar/app/extra_meta"
-    - "https://msg.okcashbag.com/sugar/home/v4/blocks"
+    - "https://api.example-app.test/api/meta"
+    - "https://api.example-app.test/api/home/blocks"
   capabilities:
     http3: "unknown"
     websocket: "absent"
@@ -25,11 +25,11 @@ target:
     - "X-Forwarded-Host"
     - "Forwarded"
   cacheable_paths:
-    - "https://www.okcashbag.com/"
+    - "https://www.example-app.test/"
   encrypted_endpoints:
-    - endpoint: "https://msg.okcashbag.com/sugar/auth/login"
+    - endpoint: "https://api.example-app.test/api/auth/login"
       mode: "crypted=1"
-    - endpoint: "https://msg.okcashbag.com/sugar/point/summary"
+    - endpoint: "https://api.example-app.test/api/points/summary"
       mode: "crypted=2"
   approval_levels:
     tc07: "high"
@@ -65,7 +65,7 @@ run_config:
   callback_domain: "replace-me.oast.site"
   tester_ip: "replace-me"
   results_dir: "./test_results"
-  marker_prefix: "OCB-SECURITY-AUDIT"
+  marker_prefix: "APP-SECURITY-AUDIT"
   timezone: "Asia/Seoul"
   use_sudo: true
   ssl_mirror_confirmed: false

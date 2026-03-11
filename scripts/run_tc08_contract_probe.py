@@ -33,7 +33,7 @@ class Case:
 CASES = [
     Case(
         name="baseline_benign",
-        referer="https://example.com/ocb/tc08-control",
+        referer="https://example.test/tc08-control",
         split_mode="mid_referer",
         note="control request with valid app headers and benign referer",
     ),
@@ -154,11 +154,11 @@ def dump_json(path: Path, payload: dict) -> None:
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
-def build_request(host: str, headers: list[tuple[str, str]]) -> str:
+def build_request(host: str, path: str, user_agent: str, headers: list[tuple[str, str]]) -> str:
     lines = [
-        "GET /sugar/app/extra_meta HTTP/1.1",
+        f"GET {path} HTTP/1.1",
         f"Host: {host}",
-        "User-Agent: OCB-TC08-CONTRACT",
+        f"User-Agent: {user_agent}",
     ]
     for key, value in headers:
         lines.append(f"{key}: {value}")
@@ -202,16 +202,18 @@ def curl_baseline(url: str, headers: list[tuple[str, str]], out_dir: Path, name:
 
 def raw_probe(
     host: str,
+    path: str,
     dst: str,
     iface: str,
     dport: int,
+    user_agent: str,
     headers: list[tuple[str, str]],
     split_mode: str,
     out_dir: Path,
     name: str,
 ) -> dict:
     sport = random.randint(43000, 49000)
-    request_text = build_request(host, headers)
+    request_text = build_request(host, path, user_agent, headers)
     request_bytes = request_text.encode("utf-8")
     chunks = split_chunks(request_bytes, split_mode)
     write_text(out_dir / f"{name}_segmented_request.txt", request_text)
@@ -269,8 +271,11 @@ def raw_probe(
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run strengthened TC-08 contract-aware probes")
     parser.add_argument("--output-dir", required=True)
-    parser.add_argument("--host", default="msg.okcashbag.com")
+    parser.add_argument("--host", default="app-api.example.test")
+    parser.add_argument("--path", default="/api/meta")
     parser.add_argument("--port", type=int, default=80)
+    parser.add_argument("--user-agent", default="RETEST-TC08-CONTRACT")
+    parser.add_argument("--header", action="append", default=[], help="Additional request header in 'Key: Value' form. Repeat as needed.")
     args = parser.parse_args()
 
     out_dir = Path(args.output_dir).resolve()
@@ -278,11 +283,13 @@ def main() -> int:
     dst = socket.gethostbyname(args.host)
     iface = detect_iface(dst)
 
-    shared_headers = [
-        ("x-ocb-agent", "ocb_7.1.2,android_15; accept=json; crypted=0"),
-        ("x-ocb-crypted-sid", "w3JSPv/UyGt4cLmi"),
-    ]
-    url = f"http://{args.host}/sugar/app/extra_meta"
+    shared_headers: list[tuple[str, str]] = []
+    for raw_header in args.header:
+        if ":" not in raw_header:
+            raise SystemExit(f"invalid --header value: {raw_header!r}")
+        key, value = raw_header.split(":", 1)
+        shared_headers.append((key.strip(), value.strip()))
+    url = f"http://{args.host}{args.path}"
 
     results = {
         "host": args.host,
@@ -297,9 +304,11 @@ def main() -> int:
         baseline = curl_baseline(url, case_headers, out_dir, case.name)
         segmented = raw_probe(
             host=args.host,
+            path=args.path,
             dst=dst,
             iface=iface,
             dport=args.port,
+            user_agent=args.user_agent,
             headers=case_headers,
             split_mode=case.split_mode,
             out_dir=out_dir,

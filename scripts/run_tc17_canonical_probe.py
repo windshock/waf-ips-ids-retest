@@ -38,11 +38,11 @@ def main() -> int:
 
     out_dir = ensure_dir(args.output_dir)
     scheme, host, port, path = parse_url(args.url)
-    common = [f"Host: {host}", "User-Agent: OCB-TC17"]
+    common = [f"Host: {host}", "User-Agent: RETEST-TC17"]
 
     cases = {
         "baseline_get": build_get_request(path, common),
-        "duplicate_host": build_get_request(path, [f"Host: {host}", f"Host: {args.conflict_host}", "User-Agent: OCB-TC17"]),
+        "duplicate_host": build_get_request(path, [f"Host: {host}", f"Host: {args.conflict_host}", "User-Agent: RETEST-TC17"]),
         "duplicate_x_forwarded_host": build_get_request(
             path,
             common + [f"X-Forwarded-Host: {host}", f"X-Forwarded-Host: {args.forwarded_host}"],
