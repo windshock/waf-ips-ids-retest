@@ -174,7 +174,7 @@ Read `references/evidence_model.md` and `references/soc_handoff.md` before drawi
 - `run_tc23_charset_probe.py`: compare UTF-8, BOM, UTF-16LE/BE, and charset-mismatch JSON bodies
 - `run_tc24_chunk_probe.py`: send raw chunked, chunk-extension, and trailer-header requests with saved artifacts
 - `docker_suricata_inline_lab.sh`: run a local Suricata NFQUEUE inline lab to compare real IPS-style drops against proxy/app responses
-- `docker_syrup_origin_lab.sh`: run a Syrup structure-calibration lab for redirects, short `400`, Next.js fallback, app JSON, static asset, and hold/no-response patterns
+- `docker_sample_origin_lab.sh`: run a sample structure-calibration lab for redirects, short `400`, Next.js fallback, app JSON, static asset, and hold/no-response patterns
 - `run_body_detection_probe.py`: send inert body-native attack payloads (SQLi, SSRF, SSTI, NoSQLi, LDAP, RCE, XSS, Log4Shell, path traversal) inside a captured JSON contract with cooldown and baseline checks
 
 ### references/

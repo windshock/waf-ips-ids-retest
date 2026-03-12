@@ -48,14 +48,14 @@ Origin-shape lab and inline-drop lab serve different purposes:
 - origin-shape lab: interpret `400/403/200`, fallback HTML, structured app JSON
 - inline-drop lab: interpret whether a no-response/timeout symptom belongs to the same family as an inline security control drop
 
-## Syrup-like example
+## Sample multi-host example
 
-If the target resembles Syrup, include:
+If the target has a multi-host architecture, include:
 
-- `www.syrup.co.kr`-like public web redirector
-- `static.syrup.co.kr`-like static asset host
-- `nxt.syrup.co.kr`-like auth host with route-specific page and host-mismatch shell fallback
-- `syrup-appif.smartwallet.co.kr:27000`-like JSON API host and port with `ResData.ResHeader` envelope
+- `www.example-target.local`-like public web redirector
+- `static.example-target.local`-like static asset host
+- `auth.example-target.local`-like auth host with route-specific page and host-mismatch shell fallback
+- `api.example-target.local:27000`-like JSON API host and port with `ResData.ResHeader` envelope
 - a short front-side `400` anchor family
 - a hold/no-response path for payload-induced timeout comparison
 - and, when timeout meaning matters, an inline-drop comparison leg so timeout is not inferred only from user expectation

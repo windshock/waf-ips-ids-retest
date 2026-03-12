@@ -1,0 +1,38 @@
+services:
+  sample-web:
+    image: python:3.11-slim
+    volumes:
+      - ./sample_app.py:/srv/sample_app.py:ro
+    environment:
+      - ROLE=web
+    command: ["python", "/srv/sample_app.py"]
+
+  sample-next:
+    image: python:3.11-slim
+    volumes:
+      - ./sample_app.py:/srv/sample_app.py:ro
+    environment:
+      - ROLE=next
+    command: ["python", "/srv/sample_app.py"]
+
+  sample-appjson:
+    image: python:3.11-slim
+    volumes:
+      - ./sample_app.py:/srv/sample_app.py:ro
+    environment:
+      - ROLE=appjson
+    command: ["python", "/srv/sample_app.py"]
+
+  sample-front:
+    image: nginx:1.25-alpine
+    ports:
+      - "19090:80"
+      - "19270:27000"
+    depends_on:
+      - sample-web
+      - sample-next
+      - sample-appjson
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/error403.html:/usr/share/nginx/html/error403.html:ro
+      - ./nginx/style_pc.css:/usr/share/nginx/html/style_pc.css:ro

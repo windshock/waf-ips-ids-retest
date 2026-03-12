@@ -9,7 +9,7 @@ MODE = os.environ.get("MODE", "web")
 
 AUTH_DOC = """<!DOCTYPE html><html id="__next_error__"><head><script src="/_next/static/chunks/main-app.js"></script></head><body><script>self.__next_f=self.__next_f||[];self.__next_f.push([1,"route-auth"])</script></body></html>"""
 REGISTER_DOC = """<!DOCTYPE html><html id="__next_error__"><head><script src="/_next/static/chunks/main-app.js"></script></head><body><script>self.__next_f=self.__next_f||[];self.__next_f.push([1,"route-register-password"])</script></body></html>"""
-GENERIC_SHELL = """<!DOCTYPE html><html id="__next_error__"><head><script src="/_next/static/chunks/main-app.js"></script></head><body><div>Syrup</div><script>self.__next_f=self.__next_f||[];self.__next_f.push([1,"generic-shell"])</script></body></html>"""
+GENERIC_SHELL = """<!DOCTYPE html><html id="__next_error__"><head><script src="/_next/static/chunks/main-app.js"></script></head><body><div>SampleApp</div><script>self.__next_f=self.__next_f||[];self.__next_f.push([1,"generic-shell"])</script></body></html>"""
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -36,19 +36,19 @@ class Handler(BaseHTTPRequestHandler):
             if "${jndi:" in (self.headers.get("X-Test") or ""):
                 time.sleep(20)
                 return
-            if self.headers.get("Host") != "www.syrup.co.kr":
+            if self.headers.get("Host") != "www.example-target.local":
                 self._write(404, b"not found", "text/plain")
                 return
             self._write(
                 302,
                 b"",
                 "text/html; charset=iso-8859-1",
-                {"Location": "https://www.syrup.co.kr/notice.do"},
+                {"Location": "https://www.example-target.local/notice.do"},
             )
             return
 
         if MODE == "next":
-            if self.headers.get("Host") != "nxt.syrup.co.kr":
+            if self.headers.get("Host") != "auth.example-target.local":
                 self._write(200, GENERIC_SHELL.encode("utf-8"), "text/html; charset=utf-8")
                 return
             if self.path.startswith("/gold-platform/register-password/"):
@@ -57,7 +57,7 @@ class Handler(BaseHTTPRequestHandler):
             self._write(200, AUTH_DOC.encode("utf-8"), "text/html; charset=utf-8")
             return
 
-        if self.headers.get("Host") != "syrup-appif.smartwallet.co.kr":
+        if self.headers.get("Host") != "api.example-target.local":
             self._write(404, b"not found", "text/plain")
             return
         payload = {
