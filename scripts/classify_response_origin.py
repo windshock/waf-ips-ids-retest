@@ -2,9 +2,12 @@
 from __future__ import annotations
 
 import argparse
+import gzip
 import hashlib
 import json
 import re
+import subprocess
+import zlib
 from pathlib import Path
 
 
@@ -20,13 +23,81 @@ def parse_header_text(text: str) -> tuple[str, dict[str, str]]:
     return status, headers
 
 
+def decode_body_bytes(body_bytes: bytes, headers: dict[str, str]) -> str:
+    if "chunked" in headers.get("transfer-encoding", "").lower():
+        body_bytes = dechunk_body(body_bytes)
+    encoding = headers.get("content-encoding", "").lower()
+    decoded = body_bytes
+    try:
+        if encoding == "gzip":
+            decoded = gzip.decompress(body_bytes)
+        elif encoding == "deflate":
+            decoded = zlib.decompress(body_bytes)
+        elif encoding == "br":
+            try:
+                import brotli  # type: ignore
+
+                decoded = brotli.decompress(body_bytes)
+            except Exception:
+                proc = subprocess.run(
+                    [
+                        "node",
+                        "-e",
+                        (
+                            "const fs=require('fs');"
+                            "const zlib=require('zlib');"
+                            "const input=fs.readFileSync(0);"
+                            "process.stdout.write(zlib.brotliDecompressSync(input));"
+                        ),
+                    ],
+                    input=body_bytes,
+                    capture_output=True,
+                    check=False,
+                )
+                if proc.returncode == 0 and proc.stdout:
+                    decoded = proc.stdout
+    except Exception:
+        decoded = body_bytes
+    return decoded.decode("utf-8", errors="replace")
+
+
+def dechunk_body(body_bytes: bytes) -> bytes:
+    pos = 0
+    out = bytearray()
+    total = len(body_bytes)
+    while pos < total:
+        line_end = body_bytes.find(b"\r\n", pos)
+        if line_end == -1:
+            return body_bytes
+        size_line = body_bytes[pos:line_end].split(b";", 1)[0].strip()
+        if not size_line:
+            return body_bytes
+        try:
+            size = int(size_line, 16)
+        except ValueError:
+            return body_bytes
+        pos = line_end + 2
+        if size == 0:
+            return bytes(out)
+        if pos + size > total:
+            return body_bytes
+        out.extend(body_bytes[pos:pos + size])
+        pos += size
+        if body_bytes[pos:pos + 2] != b"\r\n":
+            return body_bytes
+        pos += 2
+    return bytes(out)
+
+
 def load_record_from_pair(header_path: Path, body_path: Path) -> dict[str, object]:
     header_text = header_path.read_text(encoding="utf-8", errors="replace") if header_path.exists() else ""
-    body_text = body_path.read_text(encoding="utf-8", errors="replace") if body_path.exists() else ""
+    status_line, headers = parse_header_text(header_text)
+    body_bytes = body_path.read_bytes() if body_path.exists() else b""
+    body_text = decode_body_bytes(body_bytes, headers) if body_bytes else ""
     return {
         "label": header_path.stem,
-        "status_line": parse_header_text(header_text)[0],
-        "headers": parse_header_text(header_text)[1],
+        "status_line": status_line,
+        "headers": headers,
         "body_text": body_text,
         "source": str(header_path),
     }
@@ -105,14 +176,31 @@ def classify(record: dict[str, object], shared_counts: dict[str, int]) -> dict[s
         likely = "upstream-spring-likely"
         confidence = "high"
         rationale = "The body matches Spring-style default error structure."
+    elif "__next_f.push" in body_text or "/_next/static/" in body_text or 'id="__next' in lower_body:
+        likely = "upstream-nextjs-likely"
+        confidence = "high"
+        rationale = "The body matches a Next.js route or shell document."
     elif "apache tomcat" in lower_body or "type status report" in lower_body or "http status 403" in lower_body:
         likely = "upstream-tomcat-likely"
         confidence = "high"
         rationale = "The body matches Tomcat-style error report markup."
-    elif json_like and all(token in body_text for token in ['"code"', '"message"']):
+    elif json_like and (
+        all(token in body_text for token in ['"code"', '"message"'])
+        or ("\"ResData\"" in body_text and "\"ResHeader\"" in body_text)
+    ):
         likely = "upstream-app-likely"
-        confidence = "medium"
+        confidence = "high" if "\"ResData\"" in body_text and "\"ResHeader\"" in body_text else "medium"
         rationale = "The body is structured application JSON rather than a shared static edge page."
+    elif re.search(r"\b30[1278]\b", status_line) and headers.get("location"):
+        likely = "front-web-likely"
+        confidence = "medium"
+        rationale = "The response is a redirect with an explicit Location header, which is commonly emitted by the web tier."
+    elif re.search(r"\b400\b", status_line) and (
+        "not found(400)" in lower_body or len(body_text.strip()) <= 64
+    ):
+        likely = "front-web-likely"
+        confidence = "medium"
+        rationale = "The response is a short 400-style HTML body more consistent with front-side rejection than application JSON."
     elif any(token in server_lower for token in ["cloudflare", "akamai", "imperva", "incapsula", "cloudfront"]):
         likely = "edge-waf-likely"
         confidence = "high"
@@ -126,7 +214,7 @@ def classify(record: dict[str, object], shared_counts: dict[str, int]) -> dict[s
         likely = "front-nginx-likely"
         confidence = "high" if shared_count > 1 else "medium"
         rationale = "The response looks like a shared nginx or front proxy error page."
-    elif re.search(r"\b403\b", status_line) and "nginx" in server_lower:
+    elif re.search(r"\b40[034]\b", status_line) and "nginx" in server_lower:
         likely = "front-nginx-likely"
         confidence = "medium"
         rationale = "The visible responder is nginx, but the body is not distinctive enough to prove whether the app contributed."

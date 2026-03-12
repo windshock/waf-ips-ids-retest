@@ -21,6 +21,10 @@ capabilities:
   websocket: absent
   graphql: unknown
   grpc: absent
+scheme_pairs:
+  - https: https://api.example.com/v1/search
+    http: http://api.example.com/v1/search
+    note: "Read-only path for plaintext-vs-TLS timeout comparison"
 cacheable_paths:
   - https://api.example.com/v1/public
 routing_headers:

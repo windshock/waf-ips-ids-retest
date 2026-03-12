@@ -1,0 +1,19 @@
+{
+  "url": "https://api.example.com/v1/read",
+  "method": "POST",
+  "headers": {
+    "Accept": "application/json; charset=UTF-8",
+    "Content-Type": "application/json; charset=UTF-8",
+    "User-Agent": "ExampleApp/1.0",
+    "Authorization": "Bearer <TOKEN>"
+  },
+  "body": {
+    "ReqData": {
+      "ReqHeader": {
+        "command": "1000",
+        "commandVersion": "0001"
+      },
+      "ReqBody": {}
+    }
+  }
+}

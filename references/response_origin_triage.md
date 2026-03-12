@@ -7,8 +7,10 @@ Use this reference when repeated `4xx/5xx`, timeout, or reset behavior must be a
 Do not stop at `403`, `401`, `500`, or `timeout`. Decide whether the visible behavior most likely came from:
 
 - `front-nginx-likely`
+- `front-web-likely`
 - `edge-waf-likely`
 - `upstream-app-likely`
+- `upstream-nextjs-likely`
 - `upstream-spring-likely`
 - `upstream-tomcat-likely`
 - `network-drop-or-hold`
@@ -34,6 +36,14 @@ Treat repeated responses as `front-nginx-likely` when most of these are true:
 - same HTML body repeats for Unicode, oversize, segmentation, and baseline-deny cases
 - body looks like a static site error page rather than structured application JSON
 
+### Front web redirect or short `400`
+
+Treat as `front-web-likely` when:
+
+- the response is `301/302/307/308` with an explicit `Location`
+- or the response is a short `400` body such as `Not Found(400)`
+- and the body does not look like app JSON, Next.js HTML, Spring JSON, or Tomcat markup
+
 ### Edge WAF or CDN generated
 
 Treat as `edge-waf-likely` when:
@@ -50,6 +60,14 @@ Treat as `upstream-app-likely` when:
 - `Content-Type` is any JSON-like variant, including `application/json` or `text/json`
 - error semantics differ by endpoint or contract instead of collapsing to one shared page
 - body changes with business logic inputs while headers stay stable
+
+### Next.js generated
+
+Treat as `upstream-nextjs-likely` when:
+
+- the body contains `__next_f.push`, `/_next/static/`, or similar Next.js markers
+- route-specific and generic shell documents differ while status may remain `200`
+- the behavior looks like route resolution or fallback rather than an edge-generated error page
 
 ### Spring-generated
 
@@ -79,6 +97,8 @@ Treat as `network-drop-or-hold` when:
 - A `403` alone is never enough to call the owner `IPS`
 - `Server: nginx` alone is not enough to exclude upstream involvement
 - If a reverse proxy may intercept upstream errors, prefer `front-nginx-likely` over naming Tomcat or Spring directly unless the body proves it
+- A `302` redirect is often a web-tier behavior, not an IPS signal
+- A short `400` body may come from the front web tier even when the `Server` header is hidden
 
 ## Docker fallback
 
@@ -96,3 +116,4 @@ The lab provides:
 - Tomcat-style HTML error response
 - app-specific JSON error response
 - hold/no-response pattern
+- and you should add target-shaped patterns such as redirects, short `400` pages, route-shell fallback documents, or service-specific JSON envelopes before writing the final report

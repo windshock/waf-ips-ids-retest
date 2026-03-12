@@ -32,6 +32,7 @@ For runner coverage and manual-only gaps, read `execution_coverage.md` with this
 - Use at least one positive or baseline control and one target variant for every core TC
 - Do not interpret a target variant by itself
 - When the endpoint contract is unclear, downgrade the result to `inconclusive`
+- When a captured live contract exists, preserve accepted headers, cookies, and envelope shape for TC-12, TC-15, TC-21, TC-22, and TC-23. Do not treat a generic runner that discards the contract as equivalent evidence.
 - Treat edge-origin normalization parity as a regression target whenever the testcase depends on paths, headers, or proxy rewrites
 - Treat `Expect`-based parser discrepancy as part of the TC-07/TC-16 desync family, not as a separate execution status
 - When H3 or websocket capability is absent, record TC-25/26 as `not-run` with `reason=capability-absent`

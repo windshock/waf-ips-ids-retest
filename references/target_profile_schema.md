@@ -25,6 +25,8 @@ Store reusable target facts separately from the run configuration.
 - `cacheable_paths`
 - `routing_headers`
 - `cookie_sensitive_paths`
+- `scheme_pairs`: optional explicit `http://` and `https://` pairs for timeout and parity comparison
+- `request_contracts`: optional list of reusable captured request-contract files for contract-aware mutation families
 
 ## Example
 
@@ -56,6 +58,15 @@ capabilities:
   grpc: absent
 cacheable_paths:
   - https://api.example.com/v1/public
+scheme_pairs:
+  - https: https://api.example.com/v1/health
+    http: http://api.example.com/v1/health
+    note: "Compare plaintext and TLS behavior before attributing timeouts to IPS"
+request_contracts:
+  - path: ./request_contract.example.json
+    endpoint: https://api.example.com/v1/read
+    target_path: ReqData.ReqBody
+    notes: "Use contract-aware TC-12/15/21/22/23 mutations here"
 routing_headers:
   - Host
   - X-Forwarded-Host
