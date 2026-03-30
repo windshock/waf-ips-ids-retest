@@ -23,7 +23,17 @@ Used for the exact `quoted_string_crlf` variant and for validating that the seco
   - the runner should test a real quoted-string CRLF smuggling case, not only generic chunk-extension/trailer probes
   - TC-24 results should distinguish "single-request anomaly" from "hidden second request execution"
 
-### 3. nginx-devel CRLF discussion
+### 3. Pingora request smuggling write-up
+
+Used as a public implementation reference for cross-user impact, hidden second request execution, and why deployment shape matters even when the primitive is strong.
+
+- xclow3n, "Breaking Pingora: HTTP Request Smuggling & Cache Poisoning in Cloudflare's Reverse Proxy"
+- practical takeaway used in this skill:
+  - keep the primitive separate from the strongest possible impact
+  - use target-shaped labs and ownership evidence before escalating to cross-user confusion or queue-poisoning claims
+  - distinguish front-side reparsing from true orphan-response scenarios
+
+### 4. nginx-devel CRLF discussion
 
 Used to understand why nginx behavior may persist even when the issue is known publicly.
 
