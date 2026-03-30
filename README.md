@@ -19,6 +19,10 @@ This repository is a Codex local skill. The skill entrypoint is [`SKILL.md`](./S
 - See [CHANGELOG.md](./CHANGELOG.md) for TC-24 smuggling, multi-client fan-out, hypothesis/experiment workflow updates, and Docker lab fixes.
 - See [references/tc24_reference_notes.md](./references/tc24_reference_notes.md) for the external references used to shape the TC-24 runners and interpretation rules.
 
+## Related Skills
+
+- For the shared hypothesis / experiment workflow that sits above this skill, see [`security-hypothesis-lab`](https://github.com/windshock/security-hypothesis-lab).
+
 ## Use
 
 Copy this folder into your local Codex skills directory as `waf-ips-ids-retest`, then trigger it with:
