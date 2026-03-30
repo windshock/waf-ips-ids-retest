@@ -4,6 +4,10 @@ Evidence-first retest framework for WAF, IPS, and IDS validation with SOC handof
 
 This repository is a Codex local skill. The skill entrypoint is [`SKILL.md`](./SKILL.md).
 
+## Full Article
+
+- https://windshock.github.io/en/post/2026-03-13-waf-ips-ids-detection-gap-analysis/
+
 ## Included
 
 - readiness and environment classification workflow
