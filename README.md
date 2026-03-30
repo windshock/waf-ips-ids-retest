@@ -10,7 +10,11 @@ This repository is a Codex local skill. The skill entrypoint is [`SKILL.md`](./S
 - evidence model and SOC handoff templates
 - response-origin triage guidance
 - Suricata inline comparison lab
-- probe runners for TC-08 and TC-17 through TC-24
+- probe runners for TC-08 and TC-17 through TC-24, including dedicated TC-24 smuggling and multi-client fan-out probes
+
+## Release Notes
+
+- See [CHANGELOG.md](./CHANGELOG.md) for TC-24 smuggling, multi-client fan-out, sample-lab fixes, and interpretation-rule updates.
 
 ## Use
 

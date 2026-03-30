@@ -2,6 +2,8 @@
 
 Use one execution-status field and one security-interpretation field.
 
+If the result depends heavily on premises, target-shaped labs, or competing explanations, use this file to keep fact, premise, hypothesis, and conclusion separate in the experiment record.
+
 ## Execution Status
 
 - `pass`
@@ -40,6 +42,14 @@ Capture these fields for every executed request:
 - cache indicator or cache-hit note when cache behavior matters
 - notes
 
+Capture these interpretation fields whenever a finding depends on deployment assumptions or a target-shaped lab:
+
+- confirmed facts used for the interpretation
+- unverified premises still in play
+- hypotheses tested in the lab
+- which premise was validated, falsified, or left open
+- whether the conclusion is target-proven, lab-proven, or still hypothesis-only
+
 ## Additional Evidence for High-Risk TCs
 
 - segmentation: pcap and segment layout
@@ -62,3 +72,5 @@ Capture these fields for every executed request:
 - `Server: nginx` narrows the visible responder but does not prove the app was uninvolved; reverse proxies can intercept or rewrite upstream errors
 - H3 and websocket coverage checks are parity tests first; do not overstate them as exploit proofs
 - Duplicate header, cookie, or JSON-key claims require both the sent duplicates and the observed chosen value or behavior
+- Do not promote a lab-only explanation to a target conclusion unless the required premises were confirmed
+- When a stronger impact depends on an extra condition, write the demonstrated primitive and the conditional impact separately

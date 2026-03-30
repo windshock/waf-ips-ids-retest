@@ -2,6 +2,8 @@
 
 Run the retest as a controlled QA-style process.
 
+If the main difficulty is choosing the next experiment or separating a proven primitive from a conditional impact claim, treat this file as the parent execution order and keep fact, premise, hypothesis, and conclusion separate in the experiment notes.
+
 ## Phase 1: Readiness Remediation
 
 Confirm:
@@ -47,12 +49,15 @@ Examples:
 - confirm encrypted endpoint visibility with the real app encryptor
 - confirm proxy or origin interpretation differences when paths, rewrites, or framing are involved
 - confirm who most likely generated repeated `4xx/5xx` responses by comparing headers, body fingerprints, static error pages, and timeout/reset behavior
+- separate confirmed observations from premises and turn each open premise into a concrete lab question
+- improve the local lab when the current lab cannot decide between competing hypotheses
 
 Exit only when:
 
 - the minimum evidence set exists per TC
 - the outcome is no longer dependent on a single weak signal
 - repeated `403/401/500` responses have an owner label such as `front-nginx-likely`, `upstream-app-likely`, `edge-waf-likely`, or `unknown`
+- any remaining high-impact statement is either directly demonstrated or explicitly marked as conditional on a still-open premise
 
 ## Phase 4: Coverage Expansion
 
@@ -67,6 +72,7 @@ Examples:
 - compressed body inspection
 - cache key poisoning or unkeyed input
 - charset, chunk trailer, and conditional H3 or websocket parity
+- upgraded target-shaped labs that test the next premise rather than repeating the same inconclusive setup
 
 Exit only when:
 

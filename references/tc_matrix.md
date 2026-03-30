@@ -22,7 +22,7 @@ For runner coverage and manual-only gaps, read `execution_coverage.md` with this
 | TC-21 | cookie duplicate or oversize inspection gap | single cookie, duplicate cookie, long chain | cookie-aware endpoint or echoed behavior | request, response, chosen-value note |
 | TC-22 | JSON duplicate key ambiguity | unique-key baseline, duplicate-key conflict | endpoint contract understood | request, response, parser-path note |
 | TC-23 | charset, BOM, or UTF-16 parsing gap | UTF-8 baseline, BOM/UTF-16 variant | endpoint and content-type understood | raw payload artifact, charset note, response |
-| TC-24 | chunk extension or trailer parsing gap | valid chunked baseline, extension variant, trailer variant | raw chunked tooling, compatible endpoint | raw request, chunk layout, response |
+| TC-24 | chunk extension or trailer parsing gap | valid chunked baseline, extension variant, trailer variant, quoted-string CRLF variant | raw chunked tooling, compatible endpoint, target-shaped lab when response meaning is ambiguous | raw request, chunk layout, response, parser-ownership note |
 | TC-25 | HTTP/3 visibility parity | H1/H2 baseline, H3 comparison | target supports H3 | protocol artifact, parity note, response |
 | TC-26 | websocket or upgrade blind spot | HTTP baseline, upgrade handshake, post-handshake probe | websocket or SSE path exists | handshake artifact, frame note, response |
 | TC-07 | desync or request-smuggling exposure | baseline scan, artifact capture | proxy chain known, tool ready | tool artifact, response notes |
@@ -36,3 +36,12 @@ For runner coverage and manual-only gaps, read `execution_coverage.md` with this
 - Treat edge-origin normalization parity as a regression target whenever the testcase depends on paths, headers, or proxy rewrites
 - Treat `Expect`-based parser discrepancy as part of the TC-07/TC-16 desync family, not as a separate execution status
 - When H3 or websocket capability is absent, record TC-25/26 as `not-run` with `reason=capability-absent`
+- For TC-24, distinguish these outcomes explicitly:
+  - single-request anomaly with multi-response markers
+  - attacker-connection hidden request execution
+  - orphan-response or response-queue poisoning
+  - fan-out or availability pressure
+- Prefer `scripts/run_tc24_smuggling_probe.py` when you need quoted-string CRLF evidence rather than only extension/trailer visibility.
+- Prefer `scripts/run_tc24_multiip_probe.sh` when the TC-24 question is about fan-out ceiling, same-IP harness bias, or availability pressure in a local Docker lab.
+- Do not call a TC-24 result "session confusion" or "cross-user desync" unless a victim request actually receives an attacker-owned response.
+- If you measure TC-24 fan-out or DoS ceiling, do not rely on same-IP load alone. Recheck with distinct client IPs or isolated client namespaces before writing the capacity claim.

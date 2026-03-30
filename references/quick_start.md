@@ -94,6 +94,29 @@ python3 scripts/run_contract_json_mutation_probe.py \
   --output-dir ./tc22-contract
 ```
 
+- TC-24 quoted-string CRLF smuggling:
+
+```bash
+python3 scripts/run_tc24_smuggling_probe.py \
+  --url https://api.example.com/v1/submit \
+  --output-dir ./tc24-smuggle
+```
+
+- TC-24 multi-client fan-out in a local Docker lab:
+
+```bash
+sh scripts/run_tc24_multiip_probe.sh \
+  --clients 20 \
+  --hidden-count 999 \
+  --output-dir ./tc24-multiip \
+  --docker-network mylab_default \
+  --target-url http://front-proxy:8080/v1/submit \
+  --connect-host front-proxy \
+  --request-host api.example.local \
+  --trigger-path /v1/submit \
+  --hidden-path /__lab/echo/fanout
+```
+
 ## 5. Normalize and hand off
 
 If status meaning is ambiguous, run a target-shaped local lab before final reporting. See `references/service_situation_lab.md`.

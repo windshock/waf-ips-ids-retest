@@ -15,6 +15,19 @@ If this is your first run with the skill, start with `references/quick_start.md`
 
 ## Workflow
 
+### 0. Separate facts, premises, hypotheses, and conclusions
+
+This section defines the minimum discipline for this skill. Use it whenever the hard part is no longer "which probe do I run?" but "what is fact vs premise vs hypothesis, and how should I improve the lab next?"
+
+Before you build a lab or explain a finding, separate these four buckets explicitly:
+
+- confirmed fact: directly observed target behavior, capture, log, code path, or config
+- premise: an unverified deployment assumption that may matter, such as backend type, cache placement, same-IP bias, or whether an endpoint normally accepts chunked requests
+- hypothesis: a causal claim you intend to test, such as "nginx reparses the hidden request on the attacker connection" or "same-IP load is understating the TC-24 ceiling"
+- conclusion: only the portion that remains true after the premise was checked or the lab was improved to test it
+
+Do not collapse a premise into a conclusion. If an interpretation depends on a premise, either verify that premise directly or mark the statement as a hypothesis and build the next lab iteration around it.
+
 ### 1. Classify the environment first
 
 Before interpreting any result, determine whether the target is in one of these modes:
@@ -78,11 +91,34 @@ If you need to know which TCs are fully automated, partially automated, or inten
 
 When TC-08 needs stronger evidence than a generic split replay, run `scripts/run_tc08_contract_probe.py` to compare `baseline -> plain -> unicode` against the same endpoint and accepted app headers while saving pcaps and segmented raw requests.
 
+When TC-24 needs stronger evidence than a generic chunk/trailer check, run `scripts/run_tc24_smuggling_probe.py` for the `quoted_string_crlf` and escaped LF/CR variants. Use it when you need to know whether the target shows:
+
+- single-request multi-response markers
+- hidden second request execution signals
+- implementation-specific handling differences between quoted CRLF and escaped LF/CR
+
+When the TC-24 question is about concurrency, fan-out, or whether same-IP harnessing is biasing the result, run `scripts/run_tc24_multiip_probe.sh` against a target-shaped Docker lab. Use it only when clients can be placed on distinct lab IPs or isolated namespaces. Do not use a Docker multi-client harness to claim distinct public source IPs against an external production host.
+
 For expanded edge-surface coverage, add canonicalization, compressed-body, cache-key, cookie, duplicate-key, charset, and chunk-trailer probes before concluding that parsing gaps are limited to the request body. For any TC that tests a potential inspection bypass technique (TC-08 split-packet, TC-12 oversize, TC-15 malformed JSON, TC-18 compression, TC-23 charset), run the 4-cell verification matrix from `references/visibility_aware_finding.md` on the IPS-visible transport before claiming bypass. Treat HTTP/3 and websocket checks as conditional parity tests that run only when the target actually uses those protocols.
 
 When the retest question includes "does the target detect attack payloads in the request body?", run `scripts/run_body_detection_probe.py` with the captured contract and a target body field. This probe sends inert detection-test strings (SQLi, SSRF, SSTI, NoSQLi, LDAP, RCE, XSS, Log4Shell, path traversal) one at a time with cooldown and periodic baseline checks to distinguish payload-specific detection from IP/session-level rate blocking. Read `references/body_payload_detection.md` for the procedure, disambiguation rules, and reporting constraints.
 
 When a live app or auth request contract is available, do not run the stock generic body-mutation runners directly against that endpoint if doing so would discard accepted headers, envelope shape, cookies, or auth semantics. For TC-12, TC-15, TC-21, TC-22, and TC-23, preserve the captured request contract first, then mutate inside that contract. Use `scripts/run_contract_json_mutation_probe.py` or build a target-specific wrapper before continuing. If you skip this and report only the first-wave families, that is a workflow failure, not an acceptable scope reduction.
+
+When TC-24 or other request-smuggling style tests appear to create many hidden follow-up requests, do not jump directly from "single-request anomaly" to "cross-user desync" or "DoS". First determine which family you actually reproduced:
+
+- attacker-connection reparsing or client-side request splitting
+- hidden second request execution without queue poisoning
+- orphan-response or response-queue poisoning
+- fan-out driven availability pressure
+
+For TC-24 specifically:
+
+- do not treat same-source-IP ceiling tests as definitive; same-IP harnesses can understate capacity or trigger host-side artifacts
+- if you are interpreting fan-out or DoS potential, rerun with distinct client IPs or isolated client network namespaces
+- if you are writing a stable fan-out ceiling or DoS number, confirm it from a fresh lab state or after an explicit cooldown/reset; repeated high-fan-out runs can degrade due to lab socket churn or upstream connect exhaustion rather than a change in the protocol primitive
+- if you are interpreting session confusion, gather front debug logs or pcap evidence to prove whether the hidden response stays on the attacker connection or becomes orphaned
+- if a target-shaped lab shows hidden request execution but not cross-user confusion, report it as a strong primitive with limited demonstrated impact, not as proven session hijacking
 
 When a target might expose both plaintext `http://` and `https://` for the same path, run `scripts/run_scheme_parity_probe.py` first on the safest read-only endpoint. If the reporting question is "does the attack payload also time out over plaintext HTTP?", run the same helper a second time with the identical method, headers, and payload that triggered concern on HTTPS. Do not infer attack-path parity from a benign probe. Record `curl_rc`, timeout symptoms, response code, and body fingerprint for both schemes. Do not collapse these into one bucket called "HTTP". In reports, distinguish:
 
@@ -116,6 +152,13 @@ After execution, normalize logs into the common evidence model.
 
 If status meaning is still ambiguous after direct triage, run the target-shaped local lab first and include its conclusions in the notes before rendering the final handoff.
 
+When the first lab does not answer the real question, improve the lab instead of stretching the interpretation. Typical examples:
+
+- same-IP load gives an unstable or suspiciously low ceiling -> rerun with distinct client IPs or isolated client namespaces
+- hidden request execution is visible but cross-user impact is not -> add victim flows, stronger ownership markers, and connection-level logging
+- cache poisoning depends on whether the path is inherently cache-unsafe -> split the cache finding from the desync finding and retest them separately
+- a claim depends on backend type or proxy chain -> mirror that confirmed chain in the lab before escalating the impact statement
+
 Before finalizing the handoff, run the consistency checks in `references/handoff_consistency_check.md`:
 
 - No duplicate Key Findings in SOC handoff
@@ -143,6 +186,13 @@ Use separate labels for execution status and security interpretation.
 
 - Execution status: `pass`, `fail`, `blocked`, `not-run`, `inconclusive`
 - Security interpretation: `detected`, `missed`, `visibility-limited`, `not-found`, `control-gap`, `blocking-owner-unknown`
+
+For TC-24 and other desync-style probes, keep the impact label narrower than the primitive unless you actually demonstrated the stronger outcome. Examples:
+
+- hidden second request executed -> report as `request-boundary anomaly` or `hidden second request execution`
+- same connection fan-out causes target-shaped lab pressure -> report as `fan-out / availability pressure`
+- response queue poisoning only if victim actually receives attacker-owned response
+- cross-user session confusion only if ownership of the victim response is proven, not inferred
 
 Read `references/evidence_model.md` and `references/soc_handoff.md` before drawing conclusions.
 
@@ -173,6 +223,8 @@ Read `references/evidence_model.md` and `references/soc_handoff.md` before drawi
 - `run_tc22_json_duplicate_probe.py`: compare unique-key, duplicate-key, and lax JSON variants
 - `run_tc23_charset_probe.py`: compare UTF-8, BOM, UTF-16LE/BE, and charset-mismatch JSON bodies
 - `run_tc24_chunk_probe.py`: send raw chunked, chunk-extension, and trailer-header requests with saved artifacts
+- `run_tc24_smuggling_probe.py`: send `quoted_string_crlf` and escaped LF/CR smuggling variants and annotate multi-response markers such as `status_chain=...`
+- `run_tc24_multiip_probe.sh`: run quoted-string CRLF fan-out probes from multiple isolated Docker clients on the same lab network and summarize full-success vs partial-failure clients
 - `docker_suricata_inline_lab.sh`: run a local Suricata NFQUEUE inline lab to compare real IPS-style drops against proxy/app responses
 - `docker_sample_origin_lab.sh`: run a sample structure-calibration lab for redirects, short `400`, Next.js fallback, app JSON, static asset, and hold/no-response patterns
 - `run_body_detection_probe.py`: send inert body-native attack payloads (SQLi, SSRF, SSTI, NoSQLi, LDAP, RCE, XSS, Log4Shell, path traversal) inside a captured JSON contract with cooldown and baseline checks

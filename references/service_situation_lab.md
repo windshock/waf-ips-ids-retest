@@ -25,6 +25,7 @@ Mirror the target's predicted service structure from confirmed facts, not just g
 6. static asset host with cache headers if static behavior was in scope
 7. hold/no-response path
 8. optional inline-drop control leg when timeout meaning matters
+9. distinct client identities or client IP separation when the interpretation depends on concurrency, fan-out, or cross-user effects
 
 ## Procedure
 
@@ -34,6 +35,8 @@ Mirror the target's predicted service structure from confirmed facts, not just g
 4. Run `scripts/classify_response_origin.py` on the lab outputs.
 5. If timeout/no-response is a material finding, also run the inline-drop comparison lab from `references/suricata_inline_lab.md`.
 6. Compare target artifacts to the lab fingerprints before writing the final interpretation.
+7. If the claim involves TC-24 fan-out, concurrency ceiling, or cross-user effects, rerun the lab with distinct client IPs or isolated client namespaces. Do not treat same-host or same-IP saturation artifacts as protocol limits.
+8. If the claim involves a concrete ceiling or DoS number, repeat the decisive run from a fresh lab state or after an explicit reset/cooldown. If a later rerun degrades and the logs show upstream connect churn or address exhaustion, treat that as lab-state evidence, not proof that the protocol primitive changed.
 
 ## Reporting rule
 
@@ -42,6 +45,7 @@ The final report should say when a conclusion was calibrated against a service-s
 - `400/403` ownership claims
 - `200` fallback HTML interpretation
 - timeout vs app-response meaning
+- TC-24 fan-out ceiling, queue-poisoning, or cross-user claims that might change when clients no longer share a source IP or host-side socket pool
 
 Origin-shape lab and inline-drop lab serve different purposes:
 
