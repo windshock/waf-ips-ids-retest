@@ -105,7 +105,15 @@ Two additional variants cover related surface not in the article:
 | `garbage_before_boundary` | Tests whether WAF inspects pre-boundary data | BLOCKED — probe in valid ARGS, detected |
 | `garbage_after_final` | Tests whether WAF inspects post-close data (hidden payload after `--boundary--`) | **BYPASS confirmed** — Coraza stops inspecting at `--boundary--`; payload in trailing data passes undetected |
 
-`garbage_after_final` is a new finding beyond the article's 5 bypasses: Coraza (and likely other WAFs following RFC 2046's preamble/epilogue model) terminates multipart inspection at the closing delimiter and ignores any data that follows. An attacker can place a benign value in a valid form field and hide the actual payload in the epilogue region after `--boundary--`.
+`garbage_after_final` is a new finding beyond the article's 5 bypasses. The closest article technique is **Bypass 5 (trailing_space_end_marker)**, but the mechanism is distinct:
+
+| | Bypass 5 (article) | `garbage_after_final` (new) |
+|---|---|---|
+| Structure | `--boundary-- ` (trailing space) — WAF/backend disagree on where the body ends | `--boundary--\r\n` (well-formed close) followed by epilogue data |
+| WAF behavior | Grammar un-equivalence on closing marker recognition | Coraza skips the RFC 2046 epilogue region entirely |
+| Root cause | WAF/backend grammar mismatch | Coraza implementation: inspection terminates at `--boundary--` |
+
+Both fall under grammar un-equivalence, but `garbage_after_final` is a Coraza-specific implementation gap (epilogue not in inspection scope) rather than a WAF/backend parsing disagreement.
 
 ## Reporting rule
 
