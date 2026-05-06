@@ -86,34 +86,24 @@ This is why the skill now requires:
 - distinct lab client IPs or isolated namespaces for concurrency and fan-out claims
 - a fresh-lab or cooldown rerun before writing a stable ceiling or DoS number
 
-## TC-27 variant mapping
+## TC-27 variant mapping and lab verdict
 
-The 5 bypass techniques from the React2Shell article map directly to TC-27 variants in `scripts/run_tc27_multipart_probe.py`:
+The bypass verdict requires **both** conditions: (1) WAF passes the request (200), and (2) the backend's parsed fields contain the probe value. The lab uses busboy (the parser used by Next.js) at the backend so that parsing-differential claims are testable against the same parser the article targeted.
 
-| Article Bypass | TC-27 variant | Detection purpose |
-|---|---|---|
-| Bypass 1: Duplicate Boundary Parameter | `duplicate_boundary_param` | WAF/backend use different boundary — body parsed differently |
-| Bypass 2: Non-UTF8 Bytes in Headers | `non_utf8_header_byte` | WAF fails to parse → fail-open (forwards without inspection) |
-| Bypass 3: UTF-16LE Charset | `utf16le_part_charset` | WAF scans raw bytes, backend decodes via charset |
-| Bypass 4: Duplicate Content-Type in Part | `duplicate_part_content_type` | WAF/backend pick different charset from duplicate part headers |
-| Bypass 5: Trailing Space in End Marker | `trailing_space_end_marker` | Closing boundary recognition gap |
+Lab: Coraza v3.2.1 (proxy) + busboy ^1.6.0 (backend), `RETEST-TC27-PROBE` value.
 
-Two additional variants cover related surface not in the article:
+| TC-27 variant | Article bypass | WAF | busboy `parsed_fields` | Verdict |
+|---|---|---|---|---|
+| `baseline_multipart` | — (control) | 200 | `q=SAFE` | control |
+| `duplicate_boundary_param` | Bypass 1 | 200 | `q=PROBE` | **BYPASS confirmed** — Coraza uses last `boundary=`, busboy uses first |
+| `non_utf8_header_byte` | Bypass 2 | 200 (fail-open) | `{}` (Malformed Content-Type) | not reproduced — busboy also rejects malformed CT; bypass requires a more lenient backend |
+| `utf16le_part_charset` | Bypass 3 | 200 | `q=PROBE` | **BYPASS confirmed** — Coraza scans raw bytes; busboy decodes the part charset |
+| `duplicate_part_content_type` | Bypass 4 | 200 | `q=PROBE` | **BYPASS confirmed** — busboy honors the first part Content-Type charset |
+| `trailing_space_end_marker` | Bypass 5 | 200 | `q=SAFE` (probe in raw only) | not reproduced against busboy — closing marker leniency does not surface in `parsed_fields` |
+| `garbage_before_boundary` | — | 403 | (blocked) | WAF correctly blocks — probe lands in a valid ARGS field |
+| `garbage_after_final` | — | 200 | `q=SAFE` (probe in raw only) | WAF inspection gap on RFC 2046 epilogue, but busboy also ignores epilogue → not exploitable against standard busboy/Next.js apps |
 
-| TC-27 variant | Purpose | Lab result (Coraza v3.2.1) |
-|---|---|---|
-| `garbage_before_boundary` | Tests whether WAF inspects pre-boundary data | BLOCKED — probe in valid ARGS, detected |
-| `garbage_after_final` | Tests whether WAF inspects post-close data (hidden payload after `--boundary--`) | **BYPASS confirmed** — Coraza stops inspecting at `--boundary--`; payload in trailing data passes undetected |
-
-`garbage_after_final` is a new finding beyond the article's 5 bypasses. The closest article technique is **Bypass 5 (trailing_space_end_marker)**, but the mechanism is distinct:
-
-| | Bypass 5 (article) | `garbage_after_final` (new) |
-|---|---|---|
-| Structure | `--boundary-- ` (trailing space) — WAF/backend disagree on where the body ends | `--boundary--\r\n` (well-formed close) followed by epilogue data |
-| WAF behavior | Grammar un-equivalence on closing marker recognition | Coraza skips the RFC 2046 epilogue region entirely |
-| Root cause | WAF/backend grammar mismatch | Coraza implementation: inspection terminates at `--boundary--` |
-
-Both fall under grammar un-equivalence, but `garbage_after_final` is a Coraza-specific implementation gap (epilogue not in inspection scope) rather than a WAF/backend parsing disagreement.
+**Summary**: 3 of 5 article bypasses reproduce against the Coraza + busboy combination. `non_utf8_header_byte` and `trailing_space_end_marker` need a different (more lenient) backend parser to surface as parsed-field bypasses; `garbage_after_final` is a real WAF inspection gap but not exploitable against standard busboy applications because the epilogue never reaches `parsed_fields`.
 
 ## Reporting rule
 
