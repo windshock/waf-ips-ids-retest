@@ -96,5 +96,7 @@ The runner emits these cases:
 - A `403` from the lab WAF is a positive control, not an IPS verdict for a real target.
 - HTTP/2 rows use `tc=MULTIPART-H2-DOWNGRADE`; do not merge them mentally with HTTP/1.1 parser rows.
 - HTTPS-only target results without inspection visibility are `visibility-limited`.
-- A WAF or IPS bypass claim requires a visible transport path plus baseline, plain attack, and mutated attack evidence.
-- If the backend echo shows the marker but the WAF path does not block it, report the demonstrated primitive as `multipart parser differential` until the target-specific impact is proven.
+- A WAF or IPS bypass claim requires a visible transport path plus baseline, plain attack, mutated attack, and backend-side evidence for the same variant.
+- WAF-path logs or status codes alone are not enough. Compare backend-direct or origin-side artifacts before writing the verdict.
+- If the backend echo shows the marker in parsed fields but the WAF path does not block it, report the demonstrated primitive as `multipart parser differential` until the target-specific impact is proven.
+- If the marker appears only in raw body, epilogue, trailing bytes, or body hex and not in backend parsed fields, report `WAF inspection gap` or `not exploitable against this backend parser`, not bypass.

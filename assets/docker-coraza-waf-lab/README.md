@@ -7,8 +7,8 @@ Architecture based on:
 - React2Shell bypass research: https://www.hacktron.ai/blog/react2shell-vercel-waf-bypass
 
 ```
-Probe script → Coraza WAF :9091 → Echo backend :3009
-                    ↑
+Probe script -> Coraza WAF :9091 -> busboy backend :3009
+                    ^
           Executor :8009 (optional: run probe code via API)
 ```
 
@@ -23,8 +23,8 @@ identify grammar un-equivalence gaps, and design targeted bypass variants.
 | Service | Port | Purpose |
 |---|---|---|
 | `waf` | 9091 | Coraza WAF proxy (Go-based, custom build) |
-| `backend` | 3009 | Python echo server — returns parsed fields + raw body hex |
-| `executor` | 8009 | Flask server — runs sandboxed Python probe code, returns WAF logs |
+| `backend` | 3009 | Node.js busboy backend - returns parsed fields + raw body hex |
+| `executor` | 8009 | Flask server - runs sandboxed Python probe code, returns WAF logs |
 
 ## Usage
 
@@ -53,12 +53,13 @@ docker compose down
 
 ## Files
 
-- `docker-compose.yml` — service definitions (waf, backend, executor)
-- `waf/main.go` — Go Coraza reverse proxy
-- `waf/coraza.conf` — detection rules (read this to design bypasses)
-- `waf/Dockerfile` — multi-stage Go build
-- `backend/echo_server.py` — Python echo server (returns JSON with headers, parsed fields, raw body hex)
-- `executor/server.py` — Flask executor for in-network probe code execution
+- `docker-compose.yml` - service definitions (waf, backend, executor)
+- `waf/main.go` - Go Coraza reverse proxy
+- `waf/coraza.conf` - detection rules (read this to design bypasses)
+- `waf/Dockerfile` - multi-stage Go build
+- `backend/server.js` - Node.js busboy backend (returns JSON with headers, parsed fields, raw body hex)
+- `backend/package.json` - backend dependencies
+- `executor/server.py` - Flask executor for in-network probe code execution
 
 ## WAF rules (white-box)
 
@@ -72,10 +73,15 @@ Compare WAF responses vs backend-direct responses:
 | WAF result | Backend-direct | Interpretation |
 |---|---|---|
 | 403 | 200 with probe in `parsed_fields` | WAF detected correctly |
-| 200 (no probe echo) | 200 with probe | WAF passed without detection — bypass or fail-open |
-| 200 (probe echoed) | 200 with probe | WAF not inspecting this variant |
-| 400/500 | 200 | WAF or backend rejected malformed request |
+| 200 | 200 with probe in `parsed_fields` | Bypass candidate or fail-open, depending on the baseline and rule path |
+| 200 | 200 with safe parsed field and probe only in `raw_body_hex` | WAF inspection gap, not exploitable against this backend parser |
+| 200 | 200 with empty `parsed_fields` or parser error | WAF fail-open or malformed request; not a bypass unless the target backend consumes equivalent data |
+| 400/500 | 200 with probe in `parsed_fields` | Fail-closed or lab error on the WAF path; no bypass through the WAF path |
 
 `failopen_signal=fail-open-confirmed-non-utf8-passed` in `summary.csv`
-means the `non_utf8_header_byte` variant passed — check `raw_body_hex`
-in the echo response to confirm the payload arrived intact.
+means the `non_utf8_header_byte` variant passed. Check backend `parsed_fields`
+first, not only `raw_body_hex`, before calling the result a bypass.
+
+Never rely on WAF logs alone for TC-27. A bypass verdict requires both a
+control-side miss/pass and backend-side parsed-field or application-log evidence
+for the same request variant.

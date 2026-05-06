@@ -25,9 +25,9 @@ For runner coverage and manual-only gaps, read `execution_coverage.md` with this
 | TC-24 | chunk extension or trailer parsing gap | valid chunked baseline, extension variant, trailer variant, quoted-string CRLF variant | raw chunked tooling, compatible endpoint, target-shaped lab when response meaning is ambiguous | raw request, chunk layout, response, parser-ownership note |
 | TC-25 | HTTP/3 visibility parity | H1/H2 baseline, H3 comparison | target supports H3 | protocol artifact, parity note, response |
 | TC-26 | websocket or upgrade blind spot | HTTP baseline, upgrade handshake, post-handshake probe | websocket or SSE path exists | handshake artifact, frame note, response |
-| TC-27 | multipart boundary or field-parsing differential | baseline clean multipart, duplicate-boundary-param, non-UTF8-header-byte, garbage-before-boundary, garbage-after-final, utf16le-part-charset, duplicate-part-content-type, trailing-space-end-marker | multipart-capable POST endpoint; raw socket tooling | raw request per variant, WAF decision (http_code), fail-open signal, body fingerprint diff vs baseline |
+| TC-27 | multipart boundary or field-parsing differential | baseline clean multipart, duplicate-boundary-param, non-UTF8-header-byte, garbage-before-boundary, garbage-after-final, utf16le-part-charset, duplicate-part-content-type, trailing-space-end-marker | multipart-capable POST endpoint; raw socket tooling | raw request per variant, WAF decision (http_code), fail-open signal, body fingerprint diff vs baseline, backend parsed-field or backend-log evidence |
 | TC-07 | desync or request-smuggling exposure | baseline scan, artifact capture | proxy chain known, tool ready | tool artifact, response notes |
-| MULTIPART-PARSER | multipart/form-data parser differential helper | safe multipart, plain marker, parser variants | compatible multipart endpoint or Docker calibration lab | raw request, response, WAF-view vs backend-view note |
+| MULTIPART-PARSER | multipart/form-data parser differential helper | safe multipart, plain marker, parser variants | compatible multipart endpoint or Docker calibration lab | raw request, response, WAF-view vs backend-view note, backend parsed-field or backend-log evidence |
 
 ## Control Rules
 
@@ -56,5 +56,6 @@ For runner coverage and manual-only gaps, read `execution_coverage.md` with this
   - connection-drop: inline device dropped the packet before any response
 - If `non_utf8_header_byte` variant passes the WAF (same status as baseline), record the result as "fail-open" and re-examine all other TC results for this target — the WAF may be forwarding without inspection across the board.
 - For `duplicate_boundary_param`, record both the boundary value the WAF used and the boundary value the backend used (visible in the backend echo response `parsed_fields`). Do not compress these into a single "bypass" label without that evidence.
-- Do not claim "WAF bypass confirmed" for TC-27 unless the baseline shows the attack payload is blocked AND a variant shows it is not blocked. A result where both baseline and variant return 200 may indicate the WAF does not inspect multipart at all.
+- Do not claim "WAF bypass confirmed" for TC-27 unless the baseline shows the attack payload is blocked, the variant shows it is not blocked, and backend-side evidence shows the probe in the parsed field or application-consumed value. A result where both baseline and variant return 200 may indicate the WAF does not inspect multipart at all.
+- If the probe is visible only in raw body, epilogue, trailing bytes, or body hex, report `WAF inspection gap` or `not exploitable against this backend parser`, not bypass.
 - Run TC-27 on a plaintext `http://` path when IPS/WAF visibility is required. An HTTPS-only TC-27 result is `visibility-limited`, not a confirmed bypass.

@@ -105,6 +105,8 @@ Lab: Coraza v3.2.1 (proxy) + busboy ^1.6.0 (backend), `RETEST-TC27-PROBE` value.
 
 **Summary**: 3 of 5 article bypasses reproduce against the Coraza + busboy combination. `non_utf8_header_byte` and `trailing_space_end_marker` need a different (more lenient) backend parser to surface as parsed-field bypasses; `garbage_after_final` is a real WAF inspection gap but not exploitable against standard busboy applications because the epilogue never reaches `parsed_fields`.
 
+For TC-27 reporting, preserve both sides of the evidence: WAF decision/logs and busboy or target-backend `parsed_fields`. A WAF pass with the probe only in raw body, epilogue, trailing bytes, or body hex is an inspection gap, not a backend-consumed bypass.
+
 ## Reporting rule
 
 When you cite a TC-24 result, state both:

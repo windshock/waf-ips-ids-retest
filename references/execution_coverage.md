@@ -19,7 +19,7 @@ Use this map to understand whether a TC has a direct runner, needs target-specif
 | TC-24 | automated | `scripts/run_tc24_chunk_probe.py` | chunk extension and trailer probes |
 | TC-25 | conditional | no default runner | only if the target actually supports HTTP/3 |
 | TC-26 | conditional | no default runner | only if the target actually uses websocket or SSE |
-| TC-27 | automated | `scripts/run_tc27_multipart_probe.py` | requires POST endpoint accepting multipart/form-data; all 8 variants (baseline + 7 differential) included by default; use benign `--probe-value` unless the Coraza white-box lab is active |
+| TC-27 | automated | `scripts/run_tc27_multipart_probe.py` | requires POST endpoint accepting multipart/form-data; all 8 variants (baseline + 7 differential) included by default; use benign `--probe-value` unless the Coraza white-box lab is active; bypass verdicts require backend parsed-field or backend-log evidence |
 
 `manual-only` does not mean optional. It means the generic skill cannot safely automate the target-specific contract without more context.
 
@@ -29,6 +29,6 @@ Cross-cutting helper runners:
 
 - `scripts/run_scheme_parity_probe.py`: compare plaintext `http://` and `https://` for the same path. Use this before describing a timeout as affecting "HTTP and HTTPS" together.
 - `scripts/run_multipart_parser_probe.py`: send HTTP/1.1 multipart parser differential probes, with optional `--transport h2` rows kept separate as `MULTIPART-H2-DOWNGRADE`.
-- `scripts/docker_multipart_parser_lab.sh`: run the dedicated Docker calibration lab for WAF-view vs backend-view multipart parsing. Treat it as helper evidence for TC-09, TC-11, TC-23, and TC-16 when HTTP/2 is used.
+- `scripts/docker_multipart_parser_lab.sh`: run the dedicated Docker calibration lab for WAF-view vs backend-view multipart parsing. Treat it as helper evidence for TC-09, TC-11, TC-23, and TC-16 when HTTP/2 is used. Compare backend-direct artifacts before writing bypass language.
 
-`MULTIPART-PARSER` is a helper evidence category alongside TC-27. Use TC-27 for the canonical multipart bypass matrix, and use `MULTIPART-PARSER` / `MULTIPART-H2-DOWNGRADE` when you need a smaller calibration lab or HTTP/2 edge comparison.
+`MULTIPART-PARSER` is a helper evidence category alongside TC-27. Use TC-27 for the canonical multipart bypass matrix, and use `MULTIPART-PARSER` / `MULTIPART-H2-DOWNGRADE` when you need a smaller calibration lab or HTTP/2 edge comparison. WAF/IPS logs alone can show an inspection gap, but they cannot confirm backend-consumed bypass.

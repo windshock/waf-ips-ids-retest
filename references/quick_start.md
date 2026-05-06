@@ -172,4 +172,4 @@ Important:
 - Do not claim "HTTP also timed out" from the safe scheme-parity check alone.
 - If the finding is about an attack payload, rerun scheme parity with the same payload bytes or headers.
 - If a live request contract exists, do not use the generic TC-12/15/21/22/23 runners in a way that drops accepted headers, cookies, or the captured JSON envelope. Use the contract-aware runner or build a target-specific wrapper first.
-- Treat multipart Docker lab results as calibration evidence. A production bypass claim still requires a visible transport path and target evidence.
+- Treat multipart Docker lab results as calibration evidence. A production bypass claim still requires a visible transport path plus backend parsed-field or backend-log evidence for the same variant.

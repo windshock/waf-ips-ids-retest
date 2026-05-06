@@ -33,10 +33,14 @@ Capture these fields for every executed request:
 - protocol
 - application response
 - IDS or IPS result
+- control decision and log path when WAF/IPS/IDS behavior is part of the claim
 - callback state
 - response headers
 - response body fingerprint
 - likely response owner
+- backend response or backend log path when parser behavior is part of the claim
+- backend parsed fields, selected value, or application-consumed value when parser behavior is part of the claim
+- `backend_probe_seen` as `yes`, `no`, or `unknown` when a bypass claim depends on origin parsing
 - canonical value chosen by edge or origin when duplicates exist
 - decoded-body state when compression or charset changes meaning
 - cache indicator or cache-hit note when cache behavior matters
@@ -60,6 +64,7 @@ Capture these interpretation fields whenever a finding depends on deployment ass
 - cache poisoning: replay evidence, cross-user reflection note
 - cookie or duplicate-key ambiguity: chosen-value note
 - chunk or trailer parsing: raw request artifact and chunk layout
+- multipart or parser differentials: WAF/IPS decision evidence and backend parsed-field or backend-log evidence for the same request variant
 
 ## Conservative Rules
 
@@ -67,6 +72,8 @@ Capture these interpretation fields whenever a finding depends on deployment ass
 - Missing IDS alert is not proof of a gap if visibility is unknown
 - HTTPS-only evidence is not an IDS verdict when decryption is absent
 - Parser mismatch claims require endpoint-contract context
+- A WAF/IPS pass or missing alert without backend parsed-field or backend-log evidence is not a confirmed parser bypass
+- A probe that appears only in raw body, epilogue, trailing bytes, or body hex is an inspection gap unless the backend application actually consumes that value
 - A `403` is not an IPS verdict by itself
 - Repeated identical HTML error pages across unrelated TCs usually indicate a front proxy or shared error renderer, not framework-specific app logic
 - `Server: nginx` narrows the visible responder but does not prove the app was uninvolved; reverse proxies can intercept or rewrite upstream errors

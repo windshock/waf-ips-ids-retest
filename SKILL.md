@@ -43,7 +43,7 @@ The goal is to determine two things before spending time on differential variant
 **If a multipart-capable endpoint is in scope**, run TC-27 first. The `non_utf8_header_byte` variant specifically tests fail-open behavior — if it returns the same status as baseline, the WAF forwarded the request without inspecting the malformed header. Record this as "fail-open confirmed" and re-examine all other TC results for this target.
 
 **If the Coraza white-box lab is available** (`assets/docker-coraza-waf-lab/`):
-1. Read `coraza-rules/custom.rules` — this file documents the detection logic and the grammar un-equivalence gaps the rules cannot close.
+1. Read `waf/coraza.conf` — this file documents the detection logic and the grammar un-equivalence gaps the rules cannot close.
 2. From the rule logic, identify which TC-27 variant is most likely to succeed and why (e.g., if the rule operates on decoded ARGS, then `utf16le_part_charset` may bypass it because Coraza does not decode utf-16le in multipart parts).
 3. Design the variant order accordingly rather than running all 8 blindly.
 
@@ -140,9 +140,13 @@ For TC-27, distinguish these outcomes explicitly:
 - fail-closed: 4xx response — WAF or backend rejected the malformed request
 - connection-drop: no response or TCP reset — inline device blocked before response
 
-Do not claim "bypass confirmed" unless baseline is blocked AND a variant is not blocked. Run TC-27 on plaintext `http://` when WAF/IPS visibility is required.
+Do not claim "bypass confirmed" from WAF/IPS status or WAF logs alone. For TC-27 and any parser-differential claim, require both:
+- control-side evidence: WAF/IPS decision or log showing the baseline is detected and the mutated variant passes or misses on a visible transport path
+- backend-side evidence: backend-direct response, behind-WAF origin response, application log, or equivalent origin artifact showing the probe value reached the backend parser field that the application would consume
 
-Use `scripts/docker_multipart_parser_lab.sh` and `scripts/run_multipart_parser_probe.py` as calibration helpers when you need a smaller WAF-view vs backend-view lab or optional HTTP/2 edge rows. Keep `MULTIPART-H2-DOWNGRADE` rows separate because they may prove HTTP/2 downgrade or edge normalization behavior rather than a pure multipart parser gap.
+If the probe appears only in raw body, epilogue, trailing bytes, or body hex and not in backend parsed fields, report `WAF inspection gap` or `not exploitable against this backend parser`, not bypass. If backend evidence is unavailable, mark the result `inconclusive` or `visibility-limited`. Run TC-27 on plaintext `http://` when WAF/IPS visibility is required.
+
+Use `scripts/docker_multipart_parser_lab.sh` and `scripts/run_multipart_parser_probe.py` as calibration helpers when you need a smaller WAF-view vs backend-view lab or optional HTTP/2 edge rows. Compare the WAF-path artifacts with backend-direct artifacts before writing a verdict. Keep `MULTIPART-H2-DOWNGRADE` rows separate because they may prove HTTP/2 downgrade or edge normalization behavior rather than a pure multipart parser gap.
 
 For expanded edge-surface coverage, add canonicalization, compressed-body, cache-key, cookie, duplicate-key, charset, multipart/form-data parser, and chunk-trailer probes before concluding that parsing gaps are limited to the request body. For multipart/form-data parser questions, read `references/multipart_parser_differentials.md`, run the Docker calibration lab with `scripts/docker_multipart_parser_lab.sh`, then use `scripts/run_multipart_parser_probe.py` only against approved target endpoints. Keep optional HTTP/2 multipart rows separate as `MULTIPART-H2-DOWNGRADE` because they may prove HTTP/2 downgrade or edge normalization behavior rather than a pure multipart parser gap. For any TC that tests a potential inspection bypass technique (TC-08 split-packet, TC-12 oversize, TC-15 malformed JSON, TC-18 compression, TC-23 charset, multipart parser differentials), run the 4-cell verification matrix from `references/visibility_aware_finding.md` on the IPS-visible transport before claiming bypass. Treat HTTP/3 and websocket checks as conditional parity tests that run only when the target actually uses those protocols.
 
@@ -311,4 +315,4 @@ Read `references/evidence_model.md` and `references/soc_handoff.md` before drawi
 - `templates/run_manifest.md.tmpl`
 - `templates/coverage_matrix.md.tmpl`
 - `templates/soc_handoff.md.tmpl`
-- `docker-coraza-waf-lab/`: white-box Coraza WAF lab (Coraza :9091 → Python echo :3009); exposes `coraza-rules/custom.rules` so Claude can read detection logic before designing bypass variants
+- `docker-coraza-waf-lab/`: white-box Coraza WAF lab (Coraza :9091 -> Node.js busboy backend :3009); exposes `waf/coraza.conf` so Claude can read detection logic before designing variants

@@ -5,8 +5,8 @@
 ### Added
 
 - `scripts/run_tc27_multipart_probe.py`: automated runner for TC-27 multipart/form-data parsing differentials covering 8 variants (baseline, duplicate-boundary-param, non-UTF8-header-byte, garbage-before-boundary, garbage-after-final, utf16le-part-charset, duplicate-part-content-type, trailing-space-end-marker); includes per-case fail-open classification with `failopen` and `failopen_signal` columns in summary.csv
-- `assets/docker-coraza-waf-lab/`: white-box Coraza WAF lab (Executor :8009 → Coraza proxy :9091 → Python echo backend :3009); architecture based on https://github.com/HacktronAI/skills/tree/main/environments/vercel-waf-env; `waf/coraza.conf` is intentionally exposed so Claude can read detection logic and design targeted bypass variants — the key difference from black-box testing
-- confirmed new bypass beyond the article's 5: `garbage_after_final` — Coraza v3.2.1 terminates multipart inspection at `--boundary--` and ignores trailing epilogue data; payload hidden after the closing delimiter passes undetected
+- `assets/docker-coraza-waf-lab/`: white-box Coraza WAF lab (Executor :8009 -> Coraza proxy :9091 -> Node.js busboy backend :3009); architecture based on https://github.com/HacktronAI/skills/tree/main/environments/vercel-waf-env; `waf/coraza.conf` is intentionally exposed so Claude can read detection logic and design targeted variants - the key difference from black-box testing
+- documented `garbage_after_final` as a WAF inspection gap, not a confirmed bypass: Coraza v3.2.1 terminates multipart inspection at `--boundary--` and ignores trailing epilogue data, but busboy also ignores that epilogue and does not surface the marker in `parsed_fields`
 - TC-27 row to `references/tc_matrix.md` with goal, controls, prerequisites, minimum evidence, and Control Rules for fail-open and parsing-differential outcomes
 - TC-27 coverage entry to `references/execution_coverage.md`
 - dedicated `scripts/run_multipart_parser_probe.py` runner for multipart/form-data parser differential evidence, with HTTP/1.1 raw requests and optional HTTP/2 edge rows labeled as `MULTIPART-H2-DOWNGRADE`
@@ -15,12 +15,14 @@
 
 ### Changed
 
-- added Step 0.5 (WAF Behavior Inference) to `SKILL.md` workflow between Step 0 and Step 1: run TC-27 first when multipart endpoint is in scope; read `coraza-rules/` before designing variants when white-box lab is available
+- added Step 0.5 (WAF Behavior Inference) to `SKILL.md` workflow between Step 0 and Step 1: run TC-27 first when multipart endpoint is in scope; read `waf/coraza.conf` before designing variants when white-box lab is available
 - added TC-27 execution guidance and outcome taxonomy to `SKILL.md` Step 3
 - added `run_tc27_multipart_probe.py`, `docker-coraza-waf-lab/`, `run_multipart_parser_probe.py`, and `docker_multipart_parser_lab.sh` to `SKILL.md` resource lists
+- added `verdict_guardrail` to TC-27 runner output so raw WAF-path results remind reviewers that bypass verdicts require backend parsed-field or backend-log evidence
 - updated `references/tc24_reference_notes.md` with bypass-to-TC-27-variant mapping table linking all 5 article bypass techniques to their corresponding probe cases
 - linked multipart parser differential coverage into `SKILL.md`, `references/quick_start.md`, `references/execution_coverage.md`, and `references/tc_matrix.md`
 - clarified that multipart parser rows are helper evidence for TC-09, TC-11, TC-23, and TC-16 when HTTP/2 downgrade behavior is involved
+- strengthened parser-differential reporting rules so WAF/IPS logs alone cannot support a bypass verdict without backend parsed-field or backend-log evidence
 
 ## 2026-03-30
 
