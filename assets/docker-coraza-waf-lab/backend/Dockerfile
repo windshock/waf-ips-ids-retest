@@ -1,5 +1,7 @@
-FROM python:3.11-slim
+FROM node:20-slim
 WORKDIR /app
-COPY echo_server.py .
+COPY package.json .
+RUN npm install --production
+COPY server.js .
 EXPOSE 3000
-CMD ["python", "echo_server.py"]
+CMD ["node", "server.js"]

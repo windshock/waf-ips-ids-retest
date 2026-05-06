@@ -1,0 +1,9 @@
+{
+  "name": "tc27-busboy-echo",
+  "version": "1.0.0",
+  "description": "TC-27 multipart echo server using busboy (same parser as Next.js)",
+  "main": "server.js",
+  "dependencies": {
+    "busboy": "^1.6.0"
+  }
+}
