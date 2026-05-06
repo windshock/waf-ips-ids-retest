@@ -7,7 +7,11 @@ description: Use when rerunning WAF, IPS, or IDS bypass tests and you need readi
 
 ## Overview
 
-Use this skill to turn ad hoc retests into a controlled verification cycle. Treat it as a retest framework, not a generic scanner: confirm environment readiness first, record evidence in a fixed model, then normalize outputs for SOC or blue-team correlation.
+This skill is designed to be the right context, feedback loop, and environment for Claude to perform WAF/IPS/IDS bypass testing autonomously — the same kind of white-box environment that lets AI models find every bypass a human researcher finds manually. Without this context, a model burns tokens probing blind; with it, the model can systematically enumerate grammar differentials, interpret results, and improve the lab rather than stretching weak interpretations.
+
+The core problem this skill addresses is **grammar un-equivalence**: a WAF parses an HTTP request one way, while the backend (Node.js, nginx, Next.js, etc.) parses it another way. A payload that looks harmless to the WAF becomes malicious once the backend interprets it. This gap exists at every layer — WAF, reverse proxy, framework, application server — and it cannot be closed by generic rules alone. The skill's TC matrix, probe runners, and interpretation rules are all designed to surface these differentials systematically.
+
+Use this skill to turn ad hoc retests into a controlled verification cycle: confirm environment readiness first, record evidence in a fixed model, then normalize outputs for SOC or blue-team correlation.
 
 If this is your first run with the skill, start with `references/quick_start.md`. It points to the example inputs and outputs under `assets/examples/`.
 
@@ -27,6 +31,28 @@ Before you build a lab or explain a finding, separate these four buckets explici
 - conclusion: only the portion that remains true after the premise was checked or the lab was improved to test it
 
 Do not collapse a premise into a conclusion. If an interpretation depends on a premise, either verify that premise directly or mark the statement as a hypothesis and build the next lab iteration around it.
+
+### 0.5. WAF Behavior Inference (multipart/grammar differential)
+
+Run this step before TC-27 or any TC where the bypass hypothesis depends on a specific WAF parsing branch.
+
+The goal is to determine two things before spending time on differential variants:
+1. Does the WAF inspect multipart body content at all?
+2. Does the WAF fail open (forward without inspection) on parse errors?
+
+**If a multipart-capable endpoint is in scope**, run TC-27 first. The `non_utf8_header_byte` variant specifically tests fail-open behavior — if it returns the same status as baseline, the WAF forwarded the request without inspecting the malformed header. Record this as "fail-open confirmed" and re-examine all other TC results for this target.
+
+**If the Coraza white-box lab is available** (`assets/docker-coraza-waf-lab/`):
+1. Read `coraza-rules/custom.rules` — this file documents the detection logic and the grammar un-equivalence gaps the rules cannot close.
+2. From the rule logic, identify which TC-27 variant is most likely to succeed and why (e.g., if the rule operates on decoded ARGS, then `utf16le_part_charset` may bypass it because Coraza does not decode utf-16le in multipart parts).
+3. Design the variant order accordingly rather than running all 8 blindly.
+
+Start the lab with:
+```
+docker compose -f assets/docker-coraza-waf-lab/docker-compose.yml up -d
+```
+
+**If no white-box lab is available**, run all TC-27 variants and treat the results as black-box observations. Build an Observed Flow model from the response pattern before drawing conclusions.
 
 ### 1. Classify the environment first
 
@@ -98,6 +124,23 @@ When TC-24 needs stronger evidence than a generic chunk/trailer check, run `scri
 - implementation-specific handling differences between quoted CRLF and escaped LF/CR
 
 When the TC-24 question is about concurrency, fan-out, or whether same-IP harnessing is biasing the result, run `scripts/run_tc24_multiip_probe.sh` against a target-shaped Docker lab. Use it only when clients can be placed on distinct lab IPs or isolated namespaces. Do not use a Docker multi-client harness to claim distinct public source IPs against an external production host.
+
+When TC-27 is in scope or the retest question includes "does the WAF inspect multipart/form-data request bodies?", run `scripts/run_tc27_multipart_probe.py`. Complete Step 0.5 first. This probe covers:
+
+- `duplicate_boundary_param` — WAF/backend use different boundary values (Bypass 1)
+- `non_utf8_header_byte` — 0x88 in Content-Type parameter triggers fail-open (Bypass 2)
+- `garbage_before_boundary` and `garbage_after_final` — data outside boundary markers
+- `utf16le_part_charset` — WAF scans raw bytes, backend decodes via charset (Bypass 3)
+- `duplicate_part_content_type` — WAF/backend pick different Content-Type from duplicate headers in the same part (Bypass 4)
+- `trailing_space_end_marker` — closing boundary recognition differential (Bypass 5)
+
+For TC-27, distinguish these outcomes explicitly:
+- fail-open: `non_utf8_header_byte` or another malformed variant passes with same status as baseline — record `failopen=true` in summary.csv and re-examine all TC results for this target
+- parsing-differential: same status as baseline, different body fingerprint — WAF and backend disagree on parsed content
+- fail-closed: 4xx response — WAF or backend rejected the malformed request
+- connection-drop: no response or TCP reset — inline device blocked before response
+
+Do not claim "bypass confirmed" unless baseline is blocked AND a variant is not blocked. Run TC-27 on plaintext `http://` when WAF/IPS visibility is required.
 
 For expanded edge-surface coverage, add canonicalization, compressed-body, cache-key, cookie, duplicate-key, charset, and chunk-trailer probes before concluding that parsing gaps are limited to the request body. For any TC that tests a potential inspection bypass technique (TC-08 split-packet, TC-12 oversize, TC-15 malformed JSON, TC-18 compression, TC-23 charset), run the 4-cell verification matrix from `references/visibility_aware_finding.md` on the IPS-visible transport before claiming bypass. Treat HTTP/3 and websocket checks as conditional parity tests that run only when the target actually uses those protocols.
 
@@ -225,6 +268,7 @@ Read `references/evidence_model.md` and `references/soc_handoff.md` before drawi
 - `run_tc24_chunk_probe.py`: send raw chunked, chunk-extension, and trailer-header requests with saved artifacts
 - `run_tc24_smuggling_probe.py`: send `quoted_string_crlf` and escaped LF/CR smuggling variants and annotate multi-response markers such as `status_chain=...`
 - `run_tc24_multiip_probe.sh`: run quoted-string CRLF fan-out probes from multiple isolated Docker clients on the same lab network and summarize full-success vs partial-failure clients
+- `run_tc27_multipart_probe.py`: send multipart/form-data differential probes covering duplicate boundary parameter, non-UTF8 bytes in part header, garbage outside boundary, UTF-16LE charset in field, duplicate Content-Type in field, and trailing space in boundary end marker; includes per-case fail-open classification
 - `docker_suricata_inline_lab.sh`: run a local Suricata NFQUEUE inline lab to compare real IPS-style drops against proxy/app responses
 - `docker_sample_origin_lab.sh`: run a sample structure-calibration lab for redirects, short `400`, Next.js fallback, app JSON, static asset, and hold/no-response patterns
 - `run_body_detection_probe.py`: send inert body-native attack payloads (SQLi, SSRF, SSTI, NoSQLi, LDAP, RCE, XSS, Log4Shell, path traversal) inside a captured JSON contract with cooldown and baseline checks
@@ -248,6 +292,7 @@ Read `references/evidence_model.md` and `references/soc_handoff.md` before drawi
 - `body_payload_detection.md`: how to run body-native attack payload detection probes, disambiguate IP blocking from payload detection, and report results
 - `visibility_aware_finding.md`: rules for attributing findings based on transport visibility, 4-cell verification matrix, and HTTPS-only finding interpretation limits
 - `handoff_consistency_check.md`: pre-handoff consistency checks for duplicate findings, row counts, query windows, and cross-document sync
+- `tc24_reference_notes.md`: external references and bypass-to-TC mapping for TC-24 and TC-27 grammar un-equivalence work
 
 ### assets/
 
@@ -261,3 +306,4 @@ Read `references/evidence_model.md` and `references/soc_handoff.md` before drawi
 - `templates/run_manifest.md.tmpl`
 - `templates/coverage_matrix.md.tmpl`
 - `templates/soc_handoff.md.tmpl`
+- `docker-coraza-waf-lab/`: white-box Coraza WAF lab (Coraza :9091 → Python echo :3009); exposes `coraza-rules/custom.rules` so Claude can read detection logic before designing bypass variants

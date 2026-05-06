@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-05-06
+
+### Added
+
+- `scripts/run_tc27_multipart_probe.py`: automated runner for TC-27 multipart/form-data parsing differentials covering 8 variants (baseline, duplicate-boundary-param, non-UTF8-header-byte, garbage-before-boundary, garbage-after-final, utf16le-part-charset, duplicate-part-content-type, trailing-space-end-marker); includes per-case fail-open classification with `failopen` and `failopen_signal` columns in summary.csv
+- `assets/docker-coraza-waf-lab/`: white-box Coraza WAF lab (Coraza proxy :9091 → Python echo backend :3009); `coraza-rules/custom.rules` is intentionally exposed so Claude can read detection logic and design targeted bypass variants — the key difference from black-box testing
+- TC-27 row to `references/tc_matrix.md` with goal, controls, prerequisites, minimum evidence, and Control Rules for fail-open and parsing-differential outcomes
+- TC-27 coverage entry to `references/execution_coverage.md`
+
+### Changed
+
+- added Step 0.5 (WAF Behavior Inference) to `SKILL.md` workflow between Step 0 and Step 1: run TC-27 first when multipart endpoint is in scope; read `coraza-rules/` before designing variants when white-box lab is available
+- added TC-27 execution guidance and outcome taxonomy to `SKILL.md` Step 3
+- added `run_tc27_multipart_probe.py` and `docker-coraza-waf-lab/` to `SKILL.md` resource lists
+- updated `references/tc24_reference_notes.md` with bypass-to-TC-27-variant mapping table linking all 5 article bypass techniques to their corresponding probe cases
+
 ## 2026-03-30
 
 ### Added
