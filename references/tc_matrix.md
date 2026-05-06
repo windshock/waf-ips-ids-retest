@@ -25,6 +25,7 @@ For runner coverage and manual-only gaps, read `execution_coverage.md` with this
 | TC-24 | chunk extension or trailer parsing gap | valid chunked baseline, extension variant, trailer variant, quoted-string CRLF variant | raw chunked tooling, compatible endpoint, target-shaped lab when response meaning is ambiguous | raw request, chunk layout, response, parser-ownership note |
 | TC-25 | HTTP/3 visibility parity | H1/H2 baseline, H3 comparison | target supports H3 | protocol artifact, parity note, response |
 | TC-26 | websocket or upgrade blind spot | HTTP baseline, upgrade handshake, post-handshake probe | websocket or SSE path exists | handshake artifact, frame note, response |
+| TC-27 | multipart boundary or field-parsing differential | baseline clean multipart, duplicate-boundary-param, non-UTF8-header-byte, garbage-before-boundary, garbage-after-final, utf16le-part-charset, duplicate-part-content-type, trailing-space-end-marker | multipart-capable POST endpoint; raw socket tooling | raw request per variant, WAF decision (http_code), fail-open signal, body fingerprint diff vs baseline |
 | TC-07 | desync or request-smuggling exposure | baseline scan, artifact capture | proxy chain known, tool ready | tool artifact, response notes |
 
 ## Control Rules
@@ -45,3 +46,12 @@ For runner coverage and manual-only gaps, read `execution_coverage.md` with this
 - Prefer `scripts/run_tc24_multiip_probe.sh` when the TC-24 question is about fan-out ceiling, same-IP harness bias, or availability pressure in a local Docker lab.
 - Do not call a TC-24 result "session confusion" or "cross-user desync" unless a victim request actually receives an attacker-owned response.
 - If you measure TC-24 fan-out or DoS ceiling, do not rely on same-IP load alone. Recheck with distinct client IPs or isolated client namespaces before writing the capacity claim.
+- For TC-27, distinguish these outcomes explicitly:
+  - fail-open: WAF failed to parse malformed multipart and forwarded without inspection (`failopen_signal=fail-open-confirmed-*` in summary.csv)
+  - parsing-differential: WAF and backend disagree on boundary or charset — same status as baseline, different body fingerprint
+  - fail-closed: WAF or backend rejected the malformed request (4xx response)
+  - connection-drop: inline device dropped the packet before any response
+- If `non_utf8_header_byte` variant passes the WAF (same status as baseline), record the result as "fail-open" and re-examine all other TC results for this target — the WAF may be forwarding without inspection across the board.
+- For `duplicate_boundary_param`, record both the boundary value the WAF used and the boundary value the backend used (visible in the backend echo response `parsed_fields`). Do not compress these into a single "bypass" label without that evidence.
+- Do not claim "WAF bypass confirmed" for TC-27 unless the baseline shows the attack payload is blocked AND a variant shows it is not blocked. A result where both baseline and variant return 200 may indicate the WAF does not inspect multipart at all.
+- Run TC-27 on a plaintext `http://` path when IPS/WAF visibility is required. An HTTPS-only TC-27 result is `visibility-limited`, not a confirmed bypass.

@@ -19,6 +19,7 @@ Use this map to understand whether a TC has a direct runner, needs target-specif
 | TC-24 | automated | `scripts/run_tc24_chunk_probe.py` | chunk extension and trailer probes |
 | TC-25 | conditional | no default runner | only if the target actually supports HTTP/3 |
 | TC-26 | conditional | no default runner | only if the target actually uses websocket or SSE |
+| TC-27 | automated | `scripts/run_tc27_multipart_probe.py` | requires POST endpoint accepting multipart/form-data; all 8 variants (baseline + 7 differential) included by default; use benign `--probe-value` unless the Coraza white-box lab is active |
 
 `manual-only` does not mean optional. It means the generic skill cannot safely automate the target-specific contract without more context.
 

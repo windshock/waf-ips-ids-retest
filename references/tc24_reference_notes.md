@@ -2,6 +2,23 @@
 
 This note records the external references used to shape the TC-24 runners, lab procedure, and interpretation rules.
 
+## Core conceptual framing
+
+### Grammar un-equivalence
+
+The fundamental principle behind this entire skill: a WAF parses an HTTP request one way, while the backend (Node.js, Next.js, nginx, etc.) parses it another way. A payload that looks harmless to the WAF becomes malicious once the backend interprets it.
+
+This framing comes from the React2Shell WAF bypass research:
+
+- ginoah, s1r1us, "**$170k in Bypasses: The Vercel React2Shell Challenge**", Hacktron AI (May 4, 2026)
+- URL: https://www.hacktron.ai/blog/react2shell-vercel-waf-bypass
+- practical takeaways used in this skill:
+  - HTTP is full of messy, context-sensitive grammar — modeling every backend interpretation perfectly is intractable for a generic WAF
+  - the gap exists at every layer: WAF, reverse proxy, framework, application server
+  - systematic checklist approach: Content-Type parsing, multipart body parsing, form-data field parsing, request smuggling tricks — these map directly to the TC matrix
+  - when a WAF fails to parse, it often forwards the request without sanitization ("fail open") — this is why TC results must distinguish "blocked", "missed", and "visibility-limited"
+  - AI models find bypasses effectively only when given the right context, feedback loop, and environment to probe — this skill is designed to be that environment for Claude
+
 ## Primary external references
 
 ### 1. Funky Chunks research
@@ -68,6 +85,25 @@ This is why the skill now requires:
 
 - distinct lab client IPs or isolated namespaces for concurrency and fan-out claims
 - a fresh-lab or cooldown rerun before writing a stable ceiling or DoS number
+
+## TC-27 variant mapping
+
+The 5 bypass techniques from the React2Shell article map directly to TC-27 variants in `scripts/run_tc27_multipart_probe.py`:
+
+| Article Bypass | TC-27 variant | Detection purpose |
+|---|---|---|
+| Bypass 1: Duplicate Boundary Parameter | `duplicate_boundary_param` | WAF/backend use different boundary — body parsed differently |
+| Bypass 2: Non-UTF8 Bytes in Headers | `non_utf8_header_byte` | WAF fails to parse → fail-open (forwards without inspection) |
+| Bypass 3: UTF-16LE Charset | `utf16le_part_charset` | WAF scans raw bytes, backend decodes via charset |
+| Bypass 4: Duplicate Content-Type in Part | `duplicate_part_content_type` | WAF/backend pick different charset from duplicate part headers |
+| Bypass 5: Trailing Space in End Marker | `trailing_space_end_marker` | Closing boundary recognition gap |
+
+Two additional variants cover related surface not in the article:
+
+| TC-27 variant | Purpose |
+|---|---|
+| `garbage_before_boundary` | Tests whether WAF inspects pre-boundary data |
+| `garbage_after_final` | Tests whether WAF inspects post-close data (hidden payload after `--boundary--`) |
 
 ## Reporting rule
 
