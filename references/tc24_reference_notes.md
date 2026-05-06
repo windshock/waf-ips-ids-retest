@@ -100,10 +100,12 @@ The 5 bypass techniques from the React2Shell article map directly to TC-27 varia
 
 Two additional variants cover related surface not in the article:
 
-| TC-27 variant | Purpose |
-|---|---|
-| `garbage_before_boundary` | Tests whether WAF inspects pre-boundary data |
-| `garbage_after_final` | Tests whether WAF inspects post-close data (hidden payload after `--boundary--`) |
+| TC-27 variant | Purpose | Lab result (Coraza v3.2.1) |
+|---|---|---|
+| `garbage_before_boundary` | Tests whether WAF inspects pre-boundary data | BLOCKED — probe in valid ARGS, detected |
+| `garbage_after_final` | Tests whether WAF inspects post-close data (hidden payload after `--boundary--`) | **BYPASS confirmed** — Coraza stops inspecting at `--boundary--`; payload in trailing data passes undetected |
+
+`garbage_after_final` is a new finding beyond the article's 5 bypasses: Coraza (and likely other WAFs following RFC 2046's preamble/epilogue model) terminates multipart inspection at the closing delimiter and ignores any data that follows. An attacker can place a benign value in a valid form field and hide the actual payload in the epilogue region after `--boundary--`.
 
 ## Reporting rule
 

@@ -2,7 +2,10 @@
 
 White-box WAF lab for TC-27 multipart grammar differential testing.
 
-Architecture (from HacktronAI React2Shell reference):
+Architecture based on:
+- HacktronAI vercel-waf-env: https://github.com/HacktronAI/skills/tree/main/environments/vercel-waf-env
+- React2Shell bypass research: https://www.hacktron.ai/blog/react2shell-vercel-waf-bypass
+
 ```
 Probe script → Coraza WAF :9091 → Echo backend :3009
                     ↑

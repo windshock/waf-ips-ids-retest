@@ -5,7 +5,8 @@
 ### Added
 
 - `scripts/run_tc27_multipart_probe.py`: automated runner for TC-27 multipart/form-data parsing differentials covering 8 variants (baseline, duplicate-boundary-param, non-UTF8-header-byte, garbage-before-boundary, garbage-after-final, utf16le-part-charset, duplicate-part-content-type, trailing-space-end-marker); includes per-case fail-open classification with `failopen` and `failopen_signal` columns in summary.csv
-- `assets/docker-coraza-waf-lab/`: white-box Coraza WAF lab (Coraza proxy :9091 → Python echo backend :3009); `coraza-rules/custom.rules` is intentionally exposed so Claude can read detection logic and design targeted bypass variants — the key difference from black-box testing
+- `assets/docker-coraza-waf-lab/`: white-box Coraza WAF lab (Executor :8009 → Coraza proxy :9091 → Python echo backend :3009); architecture based on https://github.com/HacktronAI/skills/tree/main/environments/vercel-waf-env; `waf/coraza.conf` is intentionally exposed so Claude can read detection logic and design targeted bypass variants — the key difference from black-box testing
+- confirmed new bypass beyond the article's 5: `garbage_after_final` — Coraza v3.2.1 terminates multipart inspection at `--boundary--` and ignores trailing epilogue data; payload hidden after the closing delimiter passes undetected
 - TC-27 row to `references/tc_matrix.md` with goal, controls, prerequisites, minimum evidence, and Control Rules for fail-open and parsing-differential outcomes
 - TC-27 coverage entry to `references/execution_coverage.md`
 - dedicated `scripts/run_multipart_parser_probe.py` runner for multipart/form-data parser differential evidence, with HTTP/1.1 raw requests and optional HTTP/2 edge rows labeled as `MULTIPART-H2-DOWNGRADE`
