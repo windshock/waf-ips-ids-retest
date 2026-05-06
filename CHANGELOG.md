@@ -8,13 +8,18 @@
 - `assets/docker-coraza-waf-lab/`: white-box Coraza WAF lab (Coraza proxy :9091 → Python echo backend :3009); `coraza-rules/custom.rules` is intentionally exposed so Claude can read detection logic and design targeted bypass variants — the key difference from black-box testing
 - TC-27 row to `references/tc_matrix.md` with goal, controls, prerequisites, minimum evidence, and Control Rules for fail-open and parsing-differential outcomes
 - TC-27 coverage entry to `references/execution_coverage.md`
+- dedicated `scripts/run_multipart_parser_probe.py` runner for multipart/form-data parser differential evidence, with HTTP/1.1 raw requests and optional HTTP/2 edge rows labeled as `MULTIPART-H2-DOWNGRADE`
+- dedicated `scripts/docker_multipart_parser_lab.sh` and `assets/docker-multipart-parser-lab/` calibration lab for comparing WAF-view and backend-view multipart parsing
+- `references/multipart_parser_differentials.md` documenting the Docker lab, probe cases, and conservative interpretation rules
 
 ### Changed
 
 - added Step 0.5 (WAF Behavior Inference) to `SKILL.md` workflow between Step 0 and Step 1: run TC-27 first when multipart endpoint is in scope; read `coraza-rules/` before designing variants when white-box lab is available
 - added TC-27 execution guidance and outcome taxonomy to `SKILL.md` Step 3
-- added `run_tc27_multipart_probe.py` and `docker-coraza-waf-lab/` to `SKILL.md` resource lists
+- added `run_tc27_multipart_probe.py`, `docker-coraza-waf-lab/`, `run_multipart_parser_probe.py`, and `docker_multipart_parser_lab.sh` to `SKILL.md` resource lists
 - updated `references/tc24_reference_notes.md` with bypass-to-TC-27-variant mapping table linking all 5 article bypass techniques to their corresponding probe cases
+- linked multipart parser differential coverage into `SKILL.md`, `references/quick_start.md`, `references/execution_coverage.md`, and `references/tc_matrix.md`
+- clarified that multipart parser rows are helper evidence for TC-09, TC-11, TC-23, and TC-16 when HTTP/2 downgrade behavior is involved
 
 ## 2026-03-30
 

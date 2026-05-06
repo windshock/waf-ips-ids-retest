@@ -27,6 +27,7 @@ For runner coverage and manual-only gaps, read `execution_coverage.md` with this
 | TC-26 | websocket or upgrade blind spot | HTTP baseline, upgrade handshake, post-handshake probe | websocket or SSE path exists | handshake artifact, frame note, response |
 | TC-27 | multipart boundary or field-parsing differential | baseline clean multipart, duplicate-boundary-param, non-UTF8-header-byte, garbage-before-boundary, garbage-after-final, utf16le-part-charset, duplicate-part-content-type, trailing-space-end-marker | multipart-capable POST endpoint; raw socket tooling | raw request per variant, WAF decision (http_code), fail-open signal, body fingerprint diff vs baseline |
 | TC-07 | desync or request-smuggling exposure | baseline scan, artifact capture | proxy chain known, tool ready | tool artifact, response notes |
+| MULTIPART-PARSER | multipart/form-data parser differential helper | safe multipart, plain marker, parser variants | compatible multipart endpoint or Docker calibration lab | raw request, response, WAF-view vs backend-view note |
 
 ## Control Rules
 
@@ -36,6 +37,8 @@ For runner coverage and manual-only gaps, read `execution_coverage.md` with this
 - When a captured live contract exists, preserve accepted headers, cookies, and envelope shape for TC-12, TC-15, TC-21, TC-22, and TC-23. Do not treat a generic runner that discards the contract as equivalent evidence.
 - Treat edge-origin normalization parity as a regression target whenever the testcase depends on paths, headers, or proxy rewrites
 - Treat `Expect`-based parser discrepancy as part of the TC-07/TC-16 desync family, not as a separate execution status
+- Treat `MULTIPART-PARSER` rows as calibration helper evidence for TC-09, TC-11, TC-23, and TC-27; use the TC-27 row as the canonical multipart bypass matrix.
+- Keep `MULTIPART-H2-DOWNGRADE` rows separate from HTTP/1.1 `MULTIPART-PARSER` rows because H2 edge normalization or downgrade may be the root cause.
 - When H3 or websocket capability is absent, record TC-25/26 as `not-run` with `reason=capability-absent`
 - For TC-24, distinguish these outcomes explicitly:
   - single-request anomaly with multi-response markers

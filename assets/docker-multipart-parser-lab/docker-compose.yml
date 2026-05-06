@@ -1,0 +1,33 @@
+services:
+  lab-backend:
+    image: python:3.11-slim
+    volumes:
+      - ./backend_app.py:/srv/backend_app.py:ro
+    environment:
+      - ATTACK_MARKER=__RETEST_MULTIPART_ATTACK_MARKER__
+    ports:
+      - "19381:8080"
+    command: ["python", "/srv/backend_app.py"]
+
+  lab-waf:
+    image: python:3.11-slim
+    depends_on:
+      - lab-backend
+    volumes:
+      - ./waf_proxy.py:/srv/waf_proxy.py:ro
+    environment:
+      - BACKEND_HOST=lab-backend
+      - BACKEND_PORT=8080
+      - ATTACK_MARKER=__RETEST_MULTIPART_ATTACK_MARKER__
+    ports:
+      - "19380:8080"
+    command: ["python", "/srv/waf_proxy.py"]
+
+  lab-h2-edge:
+    image: caddy:2-alpine
+    depends_on:
+      - lab-waf
+    ports:
+      - "19443:8443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro

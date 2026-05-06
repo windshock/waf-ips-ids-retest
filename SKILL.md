@@ -142,7 +142,9 @@ For TC-27, distinguish these outcomes explicitly:
 
 Do not claim "bypass confirmed" unless baseline is blocked AND a variant is not blocked. Run TC-27 on plaintext `http://` when WAF/IPS visibility is required.
 
-For expanded edge-surface coverage, add canonicalization, compressed-body, cache-key, cookie, duplicate-key, charset, and chunk-trailer probes before concluding that parsing gaps are limited to the request body. For any TC that tests a potential inspection bypass technique (TC-08 split-packet, TC-12 oversize, TC-15 malformed JSON, TC-18 compression, TC-23 charset), run the 4-cell verification matrix from `references/visibility_aware_finding.md` on the IPS-visible transport before claiming bypass. Treat HTTP/3 and websocket checks as conditional parity tests that run only when the target actually uses those protocols.
+Use `scripts/docker_multipart_parser_lab.sh` and `scripts/run_multipart_parser_probe.py` as calibration helpers when you need a smaller WAF-view vs backend-view lab or optional HTTP/2 edge rows. Keep `MULTIPART-H2-DOWNGRADE` rows separate because they may prove HTTP/2 downgrade or edge normalization behavior rather than a pure multipart parser gap.
+
+For expanded edge-surface coverage, add canonicalization, compressed-body, cache-key, cookie, duplicate-key, charset, multipart/form-data parser, and chunk-trailer probes before concluding that parsing gaps are limited to the request body. For multipart/form-data parser questions, read `references/multipart_parser_differentials.md`, run the Docker calibration lab with `scripts/docker_multipart_parser_lab.sh`, then use `scripts/run_multipart_parser_probe.py` only against approved target endpoints. Keep optional HTTP/2 multipart rows separate as `MULTIPART-H2-DOWNGRADE` because they may prove HTTP/2 downgrade or edge normalization behavior rather than a pure multipart parser gap. For any TC that tests a potential inspection bypass technique (TC-08 split-packet, TC-12 oversize, TC-15 malformed JSON, TC-18 compression, TC-23 charset, multipart parser differentials), run the 4-cell verification matrix from `references/visibility_aware_finding.md` on the IPS-visible transport before claiming bypass. Treat HTTP/3 and websocket checks as conditional parity tests that run only when the target actually uses those protocols.
 
 When the retest question includes "does the target detect attack payloads in the request body?", run `scripts/run_body_detection_probe.py` with the captured contract and a target body field. This probe sends inert detection-test strings (SQLi, SSRF, SSTI, NoSQLi, LDAP, RCE, XSS, Log4Shell, path traversal) one at a time with cooldown and periodic baseline checks to distinguish payload-specific detection from IP/session-level rate blocking. Read `references/body_payload_detection.md` for the procedure, disambiguation rules, and reporting constraints.
 
@@ -269,8 +271,10 @@ Read `references/evidence_model.md` and `references/soc_handoff.md` before drawi
 - `run_tc24_smuggling_probe.py`: send `quoted_string_crlf` and escaped LF/CR smuggling variants and annotate multi-response markers such as `status_chain=...`
 - `run_tc24_multiip_probe.sh`: run quoted-string CRLF fan-out probes from multiple isolated Docker clients on the same lab network and summarize full-success vs partial-failure clients
 - `run_tc27_multipart_probe.py`: send multipart/form-data differential probes covering duplicate boundary parameter, non-UTF8 bytes in part header, garbage outside boundary, UTF-16LE charset in field, duplicate Content-Type in field, and trailing space in boundary end marker; includes per-case fail-open classification
+- `run_multipart_parser_probe.py`: send HTTP/1.1 multipart/form-data parser differential probes, with optional HTTP/2 edge rows labeled separately as `MULTIPART-H2-DOWNGRADE`
 - `docker_suricata_inline_lab.sh`: run a local Suricata NFQUEUE inline lab to compare real IPS-style drops against proxy/app responses
 - `docker_sample_origin_lab.sh`: run a sample structure-calibration lab for redirects, short `400`, Next.js fallback, app JSON, static asset, and hold/no-response patterns
+- `docker_multipart_parser_lab.sh`: run the Docker WAF-vs-backend multipart parser calibration lab, including an optional TLS HTTP/2 edge
 - `run_body_detection_probe.py`: send inert body-native attack payloads (SQLi, SSRF, SSTI, NoSQLi, LDAP, RCE, XSS, Log4Shell, path traversal) inside a captured JSON contract with cooldown and baseline checks
 
 ### references/
@@ -290,6 +294,7 @@ Read `references/evidence_model.md` and `references/soc_handoff.md` before drawi
 - `app-example-profile.md`: example profile showing how to map a real target into the generic schema
 - `soc_handoff.md`: what to include when handing evidence to SOC or IDS operators
 - `body_payload_detection.md`: how to run body-native attack payload detection probes, disambiguate IP blocking from payload detection, and report results
+- `multipart_parser_differentials.md`: how to test multipart/form-data WAF-vs-backend parser differentials safely
 - `visibility_aware_finding.md`: rules for attributing findings based on transport visibility, 4-cell verification matrix, and HTTPS-only finding interpretation limits
 - `handoff_consistency_check.md`: pre-handoff consistency checks for duplicate findings, row counts, query windows, and cross-document sync
 - `tc24_reference_notes.md`: external references and bypass-to-TC mapping for TC-24 and TC-27 grammar un-equivalence work

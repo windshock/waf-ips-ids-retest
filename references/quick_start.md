@@ -117,6 +117,34 @@ sh scripts/run_tc24_multiip_probe.sh \
   --hidden-path /__lab/echo/fanout
 ```
 
+- multipart parser differential Docker lab:
+
+```bash
+sh scripts/docker_multipart_parser_lab.sh up
+sh scripts/docker_multipart_parser_lab.sh probe ./multipart-lab-out
+sh scripts/docker_multipart_parser_lab.sh logs ./multipart-lab-out
+sh scripts/docker_multipart_parser_lab.sh down
+```
+
+- multipart parser differential against an approved target:
+
+```bash
+python3 scripts/run_multipart_parser_probe.py \
+  --url https://api.example.com/upload \
+  --output-dir ./multipart-parser \
+  --field-name probe
+```
+
+- optional HTTP/2 multipart edge path:
+
+```bash
+python3 scripts/run_multipart_parser_probe.py \
+  --url https://api.example.com/upload \
+  --transport h2 \
+  --output-dir ./multipart-parser-h2 \
+  --field-name probe
+```
+
 ## 5. Normalize and hand off
 
 If status meaning is ambiguous, run a target-shaped local lab before final reporting. See `references/service_situation_lab.md`.
@@ -144,3 +172,4 @@ Important:
 - Do not claim "HTTP also timed out" from the safe scheme-parity check alone.
 - If the finding is about an attack payload, rerun scheme parity with the same payload bytes or headers.
 - If a live request contract exists, do not use the generic TC-12/15/21/22/23 runners in a way that drops accepted headers, cookies, or the captured JSON envelope. Use the contract-aware runner or build a target-specific wrapper first.
+- Treat multipart Docker lab results as calibration evidence. A production bypass claim still requires a visible transport path and target evidence.

@@ -28,3 +28,7 @@ Use this map to understand whether a TC has a direct runner, needs target-specif
 Cross-cutting helper runners:
 
 - `scripts/run_scheme_parity_probe.py`: compare plaintext `http://` and `https://` for the same path. Use this before describing a timeout as affecting "HTTP and HTTPS" together.
+- `scripts/run_multipart_parser_probe.py`: send HTTP/1.1 multipart parser differential probes, with optional `--transport h2` rows kept separate as `MULTIPART-H2-DOWNGRADE`.
+- `scripts/docker_multipart_parser_lab.sh`: run the dedicated Docker calibration lab for WAF-view vs backend-view multipart parsing. Treat it as helper evidence for TC-09, TC-11, TC-23, and TC-16 when HTTP/2 is used.
+
+`MULTIPART-PARSER` is a helper evidence category alongside TC-27. Use TC-27 for the canonical multipart bypass matrix, and use `MULTIPART-PARSER` / `MULTIPART-H2-DOWNGRADE` when you need a smaller calibration lab or HTTP/2 edge comparison.
