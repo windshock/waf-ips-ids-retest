@@ -1,13 +1,13 @@
 ---
 name: waf-ips-ids-retest
-description: Use when rerunning WAF, IPS, or IDS bypass tests and you need readiness checks, conservative result interpretation, and SOC-ready evidence.
+description: Use when retesting WAF, IPS, or IDS bypass findings — including Coraza, ModSecurity, or cloud WAFs; multipart grammar differentials (TC-27); HTTP request smuggling (TC-24); parser fail-open detection; response-origin triage; or producing SOC-ready evidence handoff. Provides readiness gates, hypothesis-driven interpretation, and conservative bypass verdicts.
 ---
 
 # WAF IPS IDS Retest
 
 ## Overview
 
-This skill is designed to be the right context, feedback loop, and environment for Claude to perform WAF/IPS/IDS bypass testing autonomously — the same kind of white-box environment that lets AI models find every bypass a human researcher finds manually. Without this context, a model burns tokens probing blind; with it, the model can systematically enumerate grammar differentials, interpret results, and improve the lab rather than stretching weak interpretations.
+This skill is designed to be the right context, feedback loop, and environment for an AI coding assistant (Claude Code, Codex, or similar) to perform WAF/IPS/IDS bypass testing autonomously — the same kind of white-box environment that lets AI models find every bypass a human researcher finds manually. Without this context, a model burns tokens probing blind; with it, the model can systematically enumerate grammar differentials, interpret results, and improve the lab rather than stretching weak interpretations.
 
 The core problem this skill addresses is **grammar un-equivalence**: a WAF parses an HTTP request one way, while the backend (Node.js, nginx, Next.js, etc.) parses it another way. A payload that looks harmless to the WAF becomes malicious once the backend interprets it. This gap exists at every layer — WAF, reverse proxy, framework, application server — and it cannot be closed by generic rules alone. The skill's TC matrix, probe runners, and interpretation rules are all designed to surface these differentials systematically.
 
@@ -15,7 +15,7 @@ Use this skill to turn ad hoc retests into a controlled verification cycle: conf
 
 If this is your first run with the skill, start with `references/quick_start.md`. It points to the example inputs and outputs under `assets/examples/`.
 
-`agents/openai.yaml` is UI metadata for skill pickers. You do not need it during normal execution unless you are maintaining the skill package itself.
+`agents/openai.yaml` is UI metadata for Codex skill pickers. Claude Code reads only the frontmatter at the top of this file. Neither is needed during normal execution unless you are maintaining the skill package itself.
 
 ## Workflow
 
