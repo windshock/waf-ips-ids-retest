@@ -1,4 +1,4 @@
-FROM golang:1.22-alpine AS builder
+FROM golang:1.23-alpine AS builder
 
 RUN apk add --no-cache git
 
@@ -7,7 +7,7 @@ WORKDIR /app
 ENV GOPROXY=https://proxy.golang.org,direct
 ENV GOSUMDB=off
 
-COPY go.mod ./
+COPY go.mod go.sum ./
 COPY *.go ./
 COPY coraza.conf ./
 
